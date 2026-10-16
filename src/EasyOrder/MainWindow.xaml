@@ -1,12 +1,112 @@
 ﻿<Window x:Class="EasyOrder.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:local="clr-namespace:EasyOrder"
-        mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="EasyOrder"
+        Background="Black"
+        WindowStyle="None"
+        WindowState="Maximized"
+        ResizeMode="NoResize">
+    <Window.Resources>
+        <Style x:Key="KioskButton" TargetType="Button">
+            <Setter Property="FontSize" Value="56" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Padding" Value="24" />
+            <Setter Property="Background" Value="#FFF2F2F2" />
+            <Setter Property="BorderBrush" Value="#FF333333" />
+            <Setter Property="BorderThickness" Value="3" />
+        </Style>
+        <Style TargetType="ListBoxItem">
+            <Setter Property="FontSize" Value="40" />
+            <Setter Property="Padding" Value="20,24" />
+        </Style>
+    </Window.Resources>
 
-    </Grid>
+    <!-- 1080×1920 세로 기준, 전체 화면에서 비율 유지 확대·축소 (NFR-06) -->
+    <Viewbox Stretch="Uniform">
+        <Grid Width="1080" Height="1920" Background="White">
+
+            <!-- 메뉴 화면 (FR-12) -->
+            <Grid x:Name="MenuScreen" Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="160" />
+                    <RowDefinition Height="*" />
+                </Grid.RowDefinitions>
+                <Grid Grid.Row="1">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="260" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="360" />
+                    </Grid.ColumnDefinitions>
+                    <ListBox x:Name="CategoryList" Grid.Column="0"
+                             DisplayMemberPath="Name"
+                             SelectionChanged="CategoryList_SelectionChanged" />
+                    <ListBox x:Name="MenuList" Grid.Column="1"
+                             DisplayMemberPath="Name" />
+                    <ListBox x:Name="OrderList" Grid.Column="2" />
+                </Grid>
+            </Grid>
+
+            <!-- 포장/매장 선택 화면 (FR-01, FR-15) -->
+            <Grid x:Name="DineSelectScreen" Visibility="Collapsed">
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
+                    <Button x:Name="TakeoutButton" Content="포장" Style="{StaticResource KioskButton}"
+                            Width="640" Height="320" Margin="0,0,0,80"
+                            Click="TakeoutButton_Click" />
+                    <Button x:Name="DineInButton" Content="매장" Style="{StaticResource KioskButton}"
+                            Width="640" Height="320"
+                            Click="DineInButton_Click" />
+                </StackPanel>
+            </Grid>
+
+            <!-- 시작페이지로 버튼: 세션 중 왼쪽 위(메뉴 위) (FR-11) -->
+            <Button x:Name="HomeButton" Content="시작페이지로" Style="{StaticResource KioskButton}"
+                    FontSize="40" HorizontalAlignment="Left" VerticalAlignment="Top"
+                    Margin="24" Width="360" Height="112"
+                    Visibility="Collapsed"
+                    Click="HomeButton_Click" />
+
+            <!-- 시작 화면: 화면 아무 곳이나 터치 (FR-01) -->
+            <Grid x:Name="StartScreen" Background="White" Visibility="Collapsed"
+                  MouseLeftButtonUp="StartScreen_MouseLeftButtonUp">
+                <TextBlock Text="화면을 터치해 주세요" FontSize="80" FontWeight="Bold"
+                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+            </Grid>
+
+            <!-- QR 화면: 시작 화면 위, 화면 한가운데 (FR-13) -->
+            <Grid x:Name="QrScreen" Background="White"
+                  MouseLeftButtonUp="QrScreen_MouseLeftButtonUp">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock Text="음성주문시 촬영해주세요." FontSize="64" FontWeight="Bold"
+                               HorizontalAlignment="Center" Margin="0,0,0,48" />
+                    <Border Width="640" Height="640" BorderBrush="#FF333333" BorderThickness="3">
+                        <Grid>
+                            <Image x:Name="QrImage" Stretch="Uniform" Margin="24" />
+                            <TextBlock x:Name="QrPlaceholderText" Text="QR 준비 중" FontSize="40"
+                                       Foreground="#FF888888"
+                                       HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Grid>
+
+            <!-- 시작페이지로 확인 알림: 화면 가운데 (FR-11) -->
+            <Grid x:Name="HomeConfirmOverlay" Background="#99000000" Visibility="Collapsed">
+                <Border Background="White" Width="880" Padding="56" CornerRadius="16"
+                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="처음 화면으로 돌아가시겠습니까?" FontSize="52" FontWeight="Bold"
+                                   TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,56" />
+                        <UniformGrid Columns="2">
+                            <Button Content="예" Style="{StaticResource KioskButton}"
+                                    Height="160" Margin="0,0,24,0"
+                                    Click="HomeConfirmYes_Click" />
+                            <Button Content="아니요" Style="{StaticResource KioskButton}"
+                                    Height="160" Margin="24,0,0,0"
+                                    Click="HomeConfirmNo_Click" />
+                        </UniformGrid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+        </Grid>
+    </Viewbox>
 </Window>
