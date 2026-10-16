@@ -47,7 +47,8 @@ EasyOrder/
 │     │  ├─ audio/
 │     │  │  ├─ ask-order.wav
 │     │  │  ├─ greeting.wav
-│     │  │  └─ retry.wav
+│     │  │  ├─ retry.wav
+│     │  │  └─ touch-guide.wav
 │     │  ├─ index.html
 │     │  └─ phone.js
 │     ├─ App.xaml
@@ -79,6 +80,7 @@ EasyOrder/
 | 통신 | 내장 웹서버·WebSocket | ASP.NET Core(Kestrel) 내장 웹서버(http://localhost:6703)로 휴대폰 페이지 제공, /ws WebSocket으로 재생 명령·휴대폰 메시지 송수신, 휴대폰 페이지 가운데 "음성주문활성화" 버튼 | 완료 | 2026-10-16 | 여러 연결 허용, 재생 명령은 음성주문을 활성화한 연결에만 전송 (2026-10-16 수정) |
 | 통신 | Cloudflare 터널·QR 표시 | 앱 시작 시 cloudflared 자동 실행(localhost:6703 연결), 출력된 trycloudflare.com HTTPS 주소를 QR 코드로 만들어 QR 화면 가운데에 표시 | 완료 | 2026-10-16 | 휴대폰(Galaxy S26 Ultra Chrome) 접속 확인, 터널 비정상 종료 시 자동 재시작은 미구현 |
 | 음성 | 음성주문활성화 → 인사 음성 | 휴대폰 "음성주문활성화" 터치 시 키오스크가 포장/매장 선택 화면으로 이동하고 휴대폰에서 인사 음성(greeting.wav) 재생, 버튼은 "활성화됨"·초록색으로 바뀌고 이후 반응 없음 | 완료 | 2026-10-16 | 세션 진행 중 활성화 신호는 무시(동작 확인 필요) |
+| 음성 | 터치 주문 안내 음성 | WavGenerator에 터치 주문 안내 문구 추가 및 --only 옵션으로 touch-guide.wav만 생성 | 완료 | 2026-10-16 | - |
 
 * **상태 구분**: `대기`, `진행 중`, `완료`, `보류`
 
@@ -116,6 +118,9 @@ EasyOrder/
 * **2026-10-16 음성주문활성화 → 인사 음성**
   * **개발 내용**: MainWindow: 휴대폰 voice-activated 메시지 수신 시 QR·시작 화면이면 음성 세션(IsVoiceSession)으로 시작해 포장/매장 선택 화면으로 이동하고 PlayAsync("greeting.wav")로 휴대폰에 재생 명령 전송. phone.js: 버튼 터치 시 무음 재생으로 자동 재생 제한 해제, WebSocket 연결 전 터치 시 연결 직후 전송, 버튼을 "활성화됨"·초록색·비활성으로 변경
   * **관련 요구사항**: FR-01, FR-02, FR-14
+* **2026-10-16 터치 주문 안내 음성**
+  * **개발 내용**: tools/WavGenerator에 touch-guide.wav("음성 인식이 어렵습니다. 화면을 터치해서 주문해 주세요.") 추가, 기존 파일을 다시 만들지 않도록 --only 옵션 추가 후 해당 파일만 생성
+  * **관련 요구사항**: FR-09, IR-04
 
 ### 5.2 기능 수정 이력
 
