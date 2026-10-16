@@ -27,6 +27,33 @@ public partial class MainWindow : Window
         CategoryList.ItemsSource = _menu.Categories;
 
         ResetSession();
+
+        App.Tunnel.StatusChanged += OnTunnelStatusChanged;
+        UpdateQrCode();
+    }
+
+    protected override void OnClosed(EventArgs e)
+    {
+        App.Tunnel.StatusChanged -= OnTunnelStatusChanged;
+        base.OnClosed(e);
+    }
+
+    private void OnTunnelStatusChanged() => Dispatcher.BeginInvoke(new Action(UpdateQrCode));
+
+    /// <summary>터널 주소를 받으면 QR 코드로 표시한다 (FR-13)</summary>
+    private void UpdateQrCode()
+    {
+        var url = App.Tunnel.PublicUrl;
+        if (url is not null)
+        {
+            QrImage.Source = QrCodeImage.Create(url);
+            QrPlaceholderText.Visibility = Visibility.Collapsed;
+            return;
+        }
+
+        QrImage.Source = null;
+        QrPlaceholderText.Text = App.Tunnel.Error ?? "QR 준비 중";
+        QrPlaceholderText.Visibility = Visibility.Visible;
     }
 
     private void ShowScreen(KioskScreen screen)
