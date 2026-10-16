@@ -29,20 +29,29 @@ EasyOrder/
 ├─ docs/
 │  ├─ 수행계획서.md
 │  └─ 요구사항명세서.md
-└─ src/
-   └─ EasyOrder/
-      ├─ Data/
-      │  └─ menu.json
-      ├─ Models/
-      │  └─ MenuCatalog.cs
-      ├─ Services/
-      │  └─ MenuRepository.cs
-      ├─ App.xaml
-      ├─ App.xaml.cs
-      ├─ AssemblyInfo.cs
-      ├─ EasyOrder.csproj
-      ├─ MainWindow.xaml
-      └─ MainWindow.xaml.cs
+├─ src/
+│  └─ EasyOrder/
+│     ├─ Data/
+│     │  └─ menu.json
+│     ├─ Models/
+│     │  └─ MenuCatalog.cs
+│     ├─ Services/
+│     │  └─ MenuRepository.cs
+│     ├─ wwwroot/
+│     │  └─ audio/
+│     │     ├─ ask-order.wav
+│     │     ├─ greeting.wav
+│     │     └─ retry.wav
+│     ├─ App.xaml
+│     ├─ App.xaml.cs
+│     ├─ AssemblyInfo.cs
+│     ├─ EasyOrder.csproj
+│     ├─ MainWindow.xaml
+│     └─ MainWindow.xaml.cs
+└─ tools/
+   └─ WavGenerator/
+      ├─ Program.cs
+      └─ WavGenerator.csproj
 ```
 
 ## 4. 프로젝트 진행상황
@@ -57,6 +66,7 @@ EasyOrder/
 | 문서 | 요구사항명세서 주문 방식 반영 | 음성 주문 흐름, 터치 주문(FR-15 신설), 시작페이지로 알림 문구, 음성주문활성화 버튼 문구 반영 | 완료 | 2026-10-16 | - |
 | 문서 | 요구사항명세서 터치 주문·예외 정책 반영 | 수량·옵션 터치 방식, 인식 실패 재질문, 60초 무응답 타임아웃 반영 | 완료 | 2026-10-16 | - |
 | 데이터 | 메뉴 데이터 | 5개 대분류·26개 메뉴·옵션 그룹을 Data/menu.json으로 작성, 모델 클래스와 로더(MenuRepository) 구현 | 완료 | 2026-10-16 | 음성 별칭(aliases)은 확인 필요로 비워 둠, 가격 미포함(필요 여부 확인 필요) |
+| 음성 | 안내 음성 WAV 생성 | tools/WavGenerator 콘솔 도구로 Azure SunHi WAV 3종(greeting, ask-order, retry) 생성 | 완료 | 2026-10-16 | 키·지역은 환경 변수에서만 읽음, 재생 속도·볼륨은 기본값(확인 필요) |
 
 * **상태 구분**: `대기`, `진행 중`, `완료`, `보류`
 
@@ -79,6 +89,9 @@ EasyOrder/
 * **2026-10-16 메뉴 데이터**
   * **개발 내용**: 요구사항명세서 6.1 형식으로 Data/menu.json 작성(커피 6, 라떼 8, 에이드 2, 주스 5, 차 5), 문자열·객체 두 형태의 옵션 선택지를 읽는 OptionChoiceConverter 포함 모델(Models/MenuCatalog.cs)과 로더(Services/MenuRepository.cs) 구현, 빌드 시 출력 폴더로 복사
   * **관련 요구사항**: DR-05, IR-07
+* **2026-10-16 안내 음성 WAV 생성**
+  * **개발 내용**: Microsoft.CognitiveServices.Speech(1.52.0)를 사용하는 tools/WavGenerator 콘솔 도구 작성(ko-KR-SunHiNeural, 24kHz 16bit mono). 환경 변수 AZURE_SPEECH_KEY·AZURE_SPEECH_REGION으로 인증하고 src/EasyOrder/wwwroot/audio에 greeting.wav(인사·식사 방식 질문), ask-order.wav(주문 질문), retry.wav("천천히 말해주세요.") 생성. 솔루션에 도구 프로젝트 추가
+  * **관련 요구사항**: FR-02, FR-05, FR-09, IR-04
 
 ### 5.2 기능 수정 이력
 
