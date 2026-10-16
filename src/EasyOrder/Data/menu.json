@@ -1,0 +1,255 @@
+{
+  "store": "폴리텍점",
+  "optionGroups": [
+    {
+      "id": "temp",
+      "name": "온도",
+      "choices": [
+        "HOT",
+        "ICE"
+      ]
+    },
+    {
+      "id": "size",
+      "name": "사이즈",
+      "choices": [
+        "Large",
+        "Normal"
+      ]
+    },
+    {
+      "id": "shot",
+      "name": "샷 조절",
+      "default": 0,
+      "choices": [
+        {
+          "label": "아주 연하게",
+          "value": -3
+        },
+        {
+          "label": "연하게",
+          "value": -2
+        },
+        {
+          "label": "살짝 연하게",
+          "value": -1
+        },
+        {
+          "label": "기본",
+          "value": 0
+        },
+        {
+          "label": "샷추가 1회",
+          "value": 1
+        },
+        {
+          "label": "샷추가 2회",
+          "value": 2
+        },
+        {
+          "label": "샷추가 3회",
+          "value": 3
+        },
+        {
+          "label": "샷추가 4회",
+          "value": 4
+        }
+      ]
+    },
+    {
+      "id": "milk",
+      "name": "우유 변경",
+      "default": "우유",
+      "choices": [
+        "우유",
+        "두유",
+        "아몬드 브리즈",
+        "오트음료"
+      ]
+    }
+  ],
+  "categories": [
+    {
+      "id": "coffee",
+      "name": "커피",
+      "optionGroups": [
+        "temp",
+        "size",
+        "shot"
+      ],
+      "menus": [
+        {
+          "id": "americano",
+          "name": "아메리카노",
+          "aliases": []
+        },
+        {
+          "id": "espresso",
+          "name": "에스프레소",
+          "aliases": []
+        },
+        {
+          "id": "cappuccino",
+          "name": "카푸치노",
+          "aliases": []
+        },
+        {
+          "id": "cafe-mocha",
+          "name": "카페모카",
+          "aliases": []
+        },
+        {
+          "id": "caramel-macchiato",
+          "name": "카라멜마끼아또",
+          "aliases": []
+        },
+        {
+          "id": "affogato",
+          "name": "아포가토",
+          "aliases": []
+        }
+      ]
+    },
+    {
+      "id": "latte",
+      "name": "라떼",
+      "optionGroups": [
+        "temp",
+        "size",
+        "milk"
+      ],
+      "menus": [
+        {
+          "id": "cafe-latte",
+          "name": "카페라떼",
+          "aliases": []
+        },
+        {
+          "id": "green-tea-latte",
+          "name": "그린티라떼",
+          "aliases": []
+        },
+        {
+          "id": "black-tea-latte",
+          "name": "블랙티라떼",
+          "aliases": []
+        },
+        {
+          "id": "grain-latte",
+          "name": "오곡라떼",
+          "aliases": []
+        },
+        {
+          "id": "red-bean-latte",
+          "name": "팥라떼",
+          "aliases": []
+        },
+        {
+          "id": "mugwort-latte",
+          "name": "쑥라떼",
+          "aliases": []
+        },
+        {
+          "id": "sweet-potato-latte",
+          "name": "고구마라떼",
+          "aliases": []
+        },
+        {
+          "id": "vanilla-latte",
+          "name": "바닐라라떼",
+          "aliases": []
+        }
+      ]
+    },
+    {
+      "id": "ade",
+      "name": "에이드",
+      "optionGroups": [
+        "temp",
+        "size"
+      ],
+      "menus": [
+        {
+          "id": "grapefruit-ade",
+          "name": "자몽에이드",
+          "aliases": []
+        },
+        {
+          "id": "green-grape-ade",
+          "name": "청포도에이드",
+          "aliases": []
+        }
+      ]
+    },
+    {
+      "id": "juice",
+      "name": "주스",
+      "optionGroups": [
+        "temp",
+        "size"
+      ],
+      "menus": [
+        {
+          "id": "orange-juice",
+          "name": "오렌지주스",
+          "aliases": []
+        },
+        {
+          "id": "grapefruit-juice",
+          "name": "자몽주스",
+          "aliases": []
+        },
+        {
+          "id": "grape-juice",
+          "name": "포도주스",
+          "aliases": []
+        },
+        {
+          "id": "apple-juice",
+          "name": "사과주스",
+          "aliases": []
+        },
+        {
+          "id": "pineapple-juice",
+          "name": "파인애플주스",
+          "aliases": []
+        }
+      ]
+    },
+    {
+      "id": "tea",
+      "name": "차(Tea)",
+      "optionGroups": [
+        "temp",
+        "size"
+      ],
+      "menus": [
+        {
+          "id": "green-tea",
+          "name": "그린티",
+          "aliases": []
+        },
+        {
+          "id": "herb-tea",
+          "name": "허브티",
+          "aliases": []
+        },
+        {
+          "id": "milk-tea",
+          "name": "밀크티",
+          "aliases": []
+        },
+        {
+          "id": "iced-tea",
+          "name": "아이스티",
+          "aliases": []
+        },
+        {
+          "id": "peppermint-tea",
+          "name": "페퍼민트티",
+          "aliases": []
+        }
+      ]
+    }
+  ]
+}

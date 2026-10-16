@@ -24,17 +24,23 @@
 ```text
 EasyOrder/
 ├─ .gitignore
-├─ README.md
 ├─ EasyOrder.slnx
+├─ README.md
 ├─ docs/
 │  ├─ 수행계획서.md
 │  └─ 요구사항명세서.md
 └─ src/
    └─ EasyOrder/
-      ├─ EasyOrder.csproj
+      ├─ Data/
+      │  └─ menu.json
+      ├─ Models/
+      │  └─ MenuCatalog.cs
+      ├─ Services/
+      │  └─ MenuRepository.cs
       ├─ App.xaml
       ├─ App.xaml.cs
       ├─ AssemblyInfo.cs
+      ├─ EasyOrder.csproj
       ├─ MainWindow.xaml
       └─ MainWindow.xaml.cs
 ```
@@ -50,6 +56,7 @@ EasyOrder/
 | 문서 | 요구사항명세서 화면 흐름 반영 | 화면 흐름·QR 문구·시작페이지로 버튼·오디오 활성화·해상도 결정 사항 반영 | 완료 | 2026-10-16 | - |
 | 문서 | 요구사항명세서 주문 방식 반영 | 음성 주문 흐름, 터치 주문(FR-15 신설), 시작페이지로 알림 문구, 음성주문활성화 버튼 문구 반영 | 완료 | 2026-10-16 | - |
 | 문서 | 요구사항명세서 터치 주문·예외 정책 반영 | 수량·옵션 터치 방식, 인식 실패 재질문, 60초 무응답 타임아웃 반영 | 완료 | 2026-10-16 | - |
+| 데이터 | 메뉴 데이터 | 5개 대분류·26개 메뉴·옵션 그룹을 Data/menu.json으로 작성, 모델 클래스와 로더(MenuRepository) 구현 | 완료 | 2026-10-16 | 음성 별칭(aliases)은 확인 필요로 비워 둠, 가격 미포함(필요 여부 확인 필요) |
 
 * **상태 구분**: `대기`, `진행 중`, `완료`, `보류`
 
@@ -69,6 +76,9 @@ EasyOrder/
 * **2026-10-16 README 초기 작성**
   * **개발 내용**: 작업 지침 7장 템플릿으로 README.md 작성
   * **관련 요구사항**: 해당 없음 (산출물 문서)
+* **2026-10-16 메뉴 데이터**
+  * **개발 내용**: 요구사항명세서 6.1 형식으로 Data/menu.json 작성(커피 6, 라떼 8, 에이드 2, 주스 5, 차 5), 문자열·객체 두 형태의 옵션 선택지를 읽는 OptionChoiceConverter 포함 모델(Models/MenuCatalog.cs)과 로더(Services/MenuRepository.cs) 구현, 빌드 시 출력 폴더로 복사
+  * **관련 요구사항**: DR-05, IR-07
 
 ### 5.2 기능 수정 이력
 
