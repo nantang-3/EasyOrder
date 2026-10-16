@@ -36,14 +36,18 @@ EasyOrder/
 │     ├─ Models/
 │     │  ├─ DineMode.cs
 │     │  ├─ KioskScreen.cs
-│     │  └─ MenuCatalog.cs
+│     │  ├─ MenuCatalog.cs
+│     │  └─ PhoneMessage.cs
 │     ├─ Services/
+│     │  ├─ KioskWebServer.cs
 │     │  └─ MenuRepository.cs
 │     ├─ wwwroot/
-│     │  └─ audio/
-│     │     ├─ ask-order.wav
-│     │     ├─ greeting.wav
-│     │     └─ retry.wav
+│     │  ├─ audio/
+│     │  │  ├─ ask-order.wav
+│     │  │  ├─ greeting.wav
+│     │  │  └─ retry.wav
+│     │  ├─ index.html
+│     │  └─ phone.js
 │     ├─ App.xaml
 │     ├─ App.xaml.cs
 │     ├─ AssemblyInfo.cs
@@ -70,6 +74,7 @@ EasyOrder/
 | 데이터 | 메뉴 데이터 | 5개 대분류·26개 메뉴·옵션 그룹을 Data/menu.json으로 작성, 모델 클래스와 로더(MenuRepository) 구현 | 완료 | 2026-10-16 | 음성 별칭(aliases)은 확인 필요로 비워 둠, 가격 미포함(필요 여부 확인 필요) |
 | 음성 | 안내 음성 WAV 생성 | tools/WavGenerator 콘솔 도구로 Azure SunHi WAV 3종(greeting, ask-order, retry) 생성 | 완료 | 2026-10-16 | 키·지역은 환경 변수에서만 읽음, 재생 속도·볼륨은 기본값(확인 필요) |
 | 화면 | 화면 흐름 | QR 화면 → 시작 화면 → 포장/매장 선택 화면 → 메뉴 화면(좌 대분류/중 메뉴/우 주문 목록), 시작페이지로 버튼과 확인 알림, 1080×1920 세로 전체 화면 | 완료 | 2026-10-16 | QR 이미지는 cloudflare-qr 작업에서 표시 |
+| 통신 | 내장 웹서버·WebSocket | ASP.NET Core(Kestrel) 내장 웹서버(http://localhost:6703)로 휴대폰 페이지 제공, /ws WebSocket으로 재생 명령·휴대폰 메시지 송수신, 휴대폰 페이지 가운데 "음성주문활성화" 버튼 | 완료 | 2026-10-16 | 휴대폰 1대만 연결(새 연결 시 이전 연결 종료) |
 
 * **상태 구분**: `대기`, `진행 중`, `완료`, `보류`
 
@@ -98,6 +103,9 @@ EasyOrder/
 * **2026-10-16 화면 흐름**
   * **개발 내용**: MainWindow를 1080×1920 기준 Viewbox 전체 화면으로 구성. QR 화면("음성주문시 촬영해주세요.", QR 자리) 터치 → 시작 화면("화면을 터치해 주세요") 터치 → 포장/매장 선택 화면(버튼만) → 메뉴 화면(대분류 선택 시 소속 메뉴 표시). 포장/매장 선택값을 세션에 보관. 왼쪽 위 "시작페이지로" 버튼 → 가운데 알림 "처음 화면으로 돌아가시겠습니까?" 예(세션 초기화 후 QR 화면)/아니요(알림만 닫기). 화면 단계·식사 방식 열거형(Models/KioskScreen.cs, Models/DineMode.cs) 추가
   * **관련 요구사항**: FR-01, FR-04, FR-11, FR-12, FR-13(화면), FR-15(포장/매장 터치 선택), NFR-06
+* **2026-10-16 내장 웹서버·WebSocket**
+  * **개발 내용**: WPF 프로젝트에 Microsoft.AspNetCore.App 프레임워크 참조 추가. Services/KioskWebServer.cs: 앱 시작 시 http://localhost:6703에서 wwwroot 정적 파일(휴대폰 페이지, audio/*.wav) 제공, /ws WebSocket으로 휴대폰 메시지(PhoneMessage) 수신 이벤트와 재생 명령(PlayAsync) 송신 구현. wwwroot/index.html·phone.js: 화면 가운데 "음성주문활성화" 버튼, 버튼 터치 후에만 WAV 재생, 연결 끊김 시 2초 후 재연결
+  * **관련 요구사항**: IR-08, FR-14
 
 ### 5.2 기능 수정 이력
 
