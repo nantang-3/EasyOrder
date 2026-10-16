@@ -8,12 +8,16 @@ public partial class App : Application
     /// <summary>내장 로컬 웹서버 (포트 6703)</summary>
     public static KioskWebServer WebServer { get; } = new();
 
+    /// <summary>Cloudflare Quick Tunnel (휴대폰 HTTPS 접속용)</summary>
+    public static CloudflareTunnel Tunnel { get; } = new();
+
     protected override async void OnStartup(StartupEventArgs e)
     {
         base.OnStartup(e);
         try
         {
             await WebServer.StartAsync();
+            Tunnel.Start(KioskWebServer.LocalUrl);
         }
         catch (Exception ex)
         {
@@ -25,6 +29,7 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
+        Tunnel.Dispose();
         WebServer.DisposeAsync().AsTask().GetAwaiter().GetResult();
         base.OnExit(e);
     }

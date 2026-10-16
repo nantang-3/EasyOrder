@@ -39,8 +39,10 @@ EasyOrder/
 │     │  ├─ MenuCatalog.cs
 │     │  └─ PhoneMessage.cs
 │     ├─ Services/
+│     │  ├─ CloudflareTunnel.cs
 │     │  ├─ KioskWebServer.cs
-│     │  └─ MenuRepository.cs
+│     │  ├─ MenuRepository.cs
+│     │  └─ QrCodeImage.cs
 │     ├─ wwwroot/
 │     │  ├─ audio/
 │     │  │  ├─ ask-order.wav
@@ -75,6 +77,7 @@ EasyOrder/
 | 음성 | 안내 음성 WAV 생성 | tools/WavGenerator 콘솔 도구로 Azure SunHi WAV 3종(greeting, ask-order, retry) 생성 | 완료 | 2026-10-16 | 키·지역은 환경 변수에서만 읽음, 재생 속도·볼륨은 기본값(확인 필요) |
 | 화면 | 화면 흐름 | QR 화면 → 시작 화면 → 포장/매장 선택 화면 → 메뉴 화면(좌 대분류/중 메뉴/우 주문 목록), 시작페이지로 버튼과 확인 알림, 1080×1920 세로 전체 화면 | 완료 | 2026-10-16 | QR 이미지는 cloudflare-qr 작업에서 표시 |
 | 통신 | 내장 웹서버·WebSocket | ASP.NET Core(Kestrel) 내장 웹서버(http://localhost:6703)로 휴대폰 페이지 제공, /ws WebSocket으로 재생 명령·휴대폰 메시지 송수신, 휴대폰 페이지 가운데 "음성주문활성화" 버튼 | 완료 | 2026-10-16 | 휴대폰 1대만 연결(새 연결 시 이전 연결 종료) |
+| 통신 | Cloudflare 터널·QR 표시 | 앱 시작 시 cloudflared 자동 실행(localhost:6703 연결), 출력된 trycloudflare.com HTTPS 주소를 QR 코드로 만들어 QR 화면 가운데에 표시 | 완료 | 2026-10-16 | 휴대폰(Galaxy S26 Ultra Chrome) 접속 확인, 터널 비정상 종료 시 자동 재시작은 미구현 |
 
 * **상태 구분**: `대기`, `진행 중`, `완료`, `보류`
 
@@ -106,6 +109,9 @@ EasyOrder/
 * **2026-10-16 내장 웹서버·WebSocket**
   * **개발 내용**: WPF 프로젝트에 Microsoft.AspNetCore.App 프레임워크 참조 추가. Services/KioskWebServer.cs: 앱 시작 시 http://localhost:6703에서 wwwroot 정적 파일(휴대폰 페이지, audio/*.wav) 제공, /ws WebSocket으로 휴대폰 메시지(PhoneMessage) 수신 이벤트와 재생 명령(PlayAsync) 송신 구현. wwwroot/index.html·phone.js: 화면 가운데 "음성주문활성화" 버튼, 버튼 터치 후에만 WAV 재생, 연결 끊김 시 2초 후 재연결
   * **관련 요구사항**: IR-08, FR-14
+* **2026-10-16 Cloudflare 터널·QR 표시**
+  * **개발 내용**: Services/CloudflareTunnel.cs: PATH·Program Files에서 cloudflared.exe를 찾아 `tunnel --no-autoupdate --url http://localhost:6703`로 실행하고 출력에서 trycloudflare.com 주소를 읽어 알림, 앱 종료 시 프로세스 종료. Services/QrCodeImage.cs: QRCoder(1.8.1)로 주소를 QR 이미지로 생성. MainWindow: 주소 수신 시 QR 표시(받기 전 "QR 준비 중", 실패 시 사유 표시)
+  * **관련 요구사항**: FR-13, IR-08
 
 ### 5.2 기능 수정 이력
 
