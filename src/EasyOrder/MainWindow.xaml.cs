@@ -19,6 +19,9 @@ public partial class MainWindow : Window
     /// <summary>현재 세션의 식사 방식 (FR-04). 세션 시작 전·초기화 후에는 null</summary>
     public DineMode? CurrentDineMode { get; private set; }
 
+    /// <summary>휴대폰 "음성주문활성화"로 시작한 음성 주문 세션인지 여부 (FR-14)</summary>
+    public bool IsVoiceSession { get; private set; }
+
     public MainWindow()
     {
         InitializeComponent();
@@ -30,11 +33,14 @@ public partial class MainWindow : Window
 
         App.Tunnel.StatusChanged += OnTunnelStatusChanged;
         UpdateQrCode();
+
+        App.WebServer.MessageReceived += OnPhoneMessageReceived;
     }
 
     protected override void OnClosed(EventArgs e)
     {
         App.Tunnel.StatusChanged -= OnTunnelStatusChanged;
+        App.WebServer.MessageReceived -= OnPhoneMessageReceived;
         base.OnClosed(e);
     }
 
@@ -72,6 +78,7 @@ public partial class MainWindow : Window
     private void ResetSession()
     {
         CurrentDineMode = null;
+        IsVoiceSession = false;
         OrderList.Items.Clear();
         CategoryList.SelectedIndex = _menu.Categories.Count > 0 ? 0 : -1;
         HomeConfirmOverlay.Visibility = Visibility.Collapsed;
@@ -88,6 +95,7 @@ public partial class MainWindow : Window
     private void StartScreen_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
     {
         CurrentDineMode = null;
+        IsVoiceSession = false;
         ShowScreen(KioskScreen.DineSelect);
     }
 
@@ -100,6 +108,35 @@ public partial class MainWindow : Window
     {
         CurrentDineMode = mode;
         ShowScreen(KioskScreen.Menu);
+    }
+
+    private void OnPhoneMessageReceived(PhoneMessage message)
+    {
+        Dispatcher.BeginInvoke(new Action(() => HandlePhoneMessage(message)));
+    }
+
+    private void HandlePhoneMessage(PhoneMessage message)
+    {
+        if (message.Type == "voice-activated")
+        {
+            StartVoiceSession();
+        }
+    }
+
+    // 휴대폰 "음성주문활성화" → 시작 화면을 거치지 않고 포장/매장 선택 화면 + 인사 음성 (FR-01, FR-02, FR-14)
+    // 세션 진행 중(포장/매장 선택·메뉴 화면)에 눌린 경우의 동작은 확인 필요이므로 처리하지 않는다.
+    private void StartVoiceSession()
+    {
+        if (CurrentScreen is not (KioskScreen.Qr or KioskScreen.Start))
+        {
+            return;
+        }
+
+        CurrentDineMode = null;
+        IsVoiceSession = true;
+        HomeConfirmOverlay.Visibility = Visibility.Collapsed;
+        ShowScreen(KioskScreen.DineSelect);
+        _ = App.WebServer.PlayAsync("greeting.wav");
     }
 
     // 대분류 선택 → 가운데에 소속 메뉴 표시 (FR-12)
