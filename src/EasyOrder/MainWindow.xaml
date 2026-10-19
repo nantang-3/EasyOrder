@@ -1,6 +1,7 @@
 ﻿<Window x:Class="EasyOrder.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:svc="clr-namespace:EasyOrder.Services"
         Title="EasyOrder"
         Background="Black"
         WindowStyle="None"
@@ -8,6 +9,8 @@
         ResizeMode="NoResize"
         FontFamily="Malgun Gothic">
     <Window.Resources>
+        <svc:MenuPhotoConverter x:Key="MenuPhotoConverter" />
+        <svc:MenuPhotoMissingConverter x:Key="MenuPhotoMissingConverter" />
         <!-- 색상 (화면 설계서 기준) -->
         <SolidColorBrush x:Key="PrimaryBrush" Color="#1F6B4F" />
         <SolidColorBrush x:Key="DarkGreenBrush" Color="#17523C" />
@@ -300,10 +303,18 @@
                                     <DataTemplate>
                                         <Button Style="{StaticResource CardButton}" Height="300" Margin="12" Tag="{Binding}" Click="MenuCard_Click">
                                             <StackPanel>
-                                                <Grid Width="140" Height="140">
+                                                <!-- 메뉴 사진 (없으면 컵 아이콘) -->
+                                                <Grid Width="160" Height="160">
                                                     <Ellipse Fill="{StaticResource LightGrayBrush}" />
+                                                    <Ellipse>
+                                                        <Ellipse.Fill>
+                                                            <ImageBrush Stretch="UniformToFill"
+                                                                        ImageSource="{Binding Id, Converter={StaticResource MenuPhotoConverter}}" />
+                                                        </Ellipse.Fill>
+                                                    </Ellipse>
                                                     <Path Data="{StaticResource CupIcon}" Stroke="#555B58" StrokeThickness="4"
-                                                          Width="52" Height="44" Stretch="Uniform" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                                          Width="52" Height="44" Stretch="Uniform" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                                                          Visibility="{Binding Id, Converter={StaticResource MenuPhotoMissingConverter}}" />
                                                 </Grid>
                                                 <TextBlock Text="{Binding Name}" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center"
                                                            TextWrapping="Wrap" TextAlignment="Center" Margin="8,26,8,0" />
@@ -521,7 +532,7 @@
                                 <Border Width="190" Height="190" CornerRadius="28" Background="{StaticResource LightGrayBrush}"
                                         BorderBrush="#C9CCCA" BorderThickness="2">
                                     <Grid>
-                                        <Image x:Name="PopupMenuImage" Stretch="UniformToFill" />
+                                        <Rectangle x:Name="PopupMenuImage" RadiusX="26" RadiusY="26" />
                                         <TextBlock x:Name="PopupImagePlaceholder" Text="메뉴 사진" FontSize="24" Foreground="{StaticResource SubTextBrush}"
                                                    HorizontalAlignment="Center" VerticalAlignment="Center" />
                                     </Grid>

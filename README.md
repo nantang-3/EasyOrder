@@ -33,6 +33,9 @@ EasyOrder/
 │  └─ EasyOrder/
 │     ├─ Data/
 │     │  └─ menu.json
+│     ├─ Images/
+│     │  └─ Menu/
+│     │     └─ {메뉴 id}.png (26개)
 │     ├─ Models/
 │     │  ├─ DineMode.cs
 │     │  ├─ KioskScreen.cs
@@ -43,6 +46,7 @@ EasyOrder/
 │     │  ├─ CloudflareTunnel.cs
 │     │  ├─ DineModeParser.cs
 │     │  ├─ KioskWebServer.cs
+│     │  ├─ MenuPhotos.cs
 │     │  ├─ MenuRepository.cs
 │     │  ├─ OrderParser.cs
 │     │  ├─ QrCodeImage.cs
@@ -94,6 +98,7 @@ EasyOrder/
 | 예외 처리 | 무응답 타임아웃 | 포장/매장 선택·메뉴 화면에서 60초간 터치와 말(휴대폰 인식 텍스트)이 모두 없으면 세션 초기화 후 QR 화면, 머리글 가운데에 남은 시간 표시 | 완료 | 2026-10-19 | 주문 완료 화면은 자체 30초 타이머 |
 | 음성 | 음성 주문 완료 | 메뉴 화면에서 주문하기로 "주문완료"라고 말하면 주문 완료 화면으로 이동(담긴 메뉴가 없으면 인식 실패 처리) | 완료 | 2026-10-19 | - |
 | 음성 | 확인 멘트 대체 음성 | Azure로 확인 멘트를 만들지 못하면(키 없음·인터넷·서비스 오류) Windows 내장 한국어 음성으로 WAV를 만들어 휴대폰에서 재생 | 완료 | 2026-10-19 | Windows에 한국어 음성이 없으면 소리 없이 넘어감 |
+| 화면 | 메뉴 사진 | 사용자 제공 메뉴 사진 26종을 400×400 PNG로 줄여 메뉴 카드 동그라미와 옵션 팝업의 메뉴 사진 칸에 표시, 사진이 없으면 컵 아이콘·"메뉴 사진" 자리표시 | 완료 | 2026-10-19 | - |
 
 * **상태 구분**: `대기`, `진행 중`, `완료`, `보류`
 
@@ -158,6 +163,9 @@ EasyOrder/
 * **2026-10-19 확인 멘트 대체 음성**
   * **개발 내용**: SpeechSynthesisService: Azure 생성 실패 시 System.Speech(10.0.13, Windows 내장 TTS)로 ko-KR 음성(확인: Microsoft Heami Desktop)을 골라 같은 위치에 WAV 생성, Azure 호출 예외 처리 추가
   * **관련 요구사항**: FR-17, IR-04
+* **2026-10-19 메뉴 사진**
+  * **개발 내용**: 「메뉴 사진」 폴더의 원본(1024×1024)을 400×400 PNG로 줄여 src/EasyOrder/Images/Menu/{메뉴 id}.png로 저장(빌드 시 출력 폴더로 복사). Services/MenuPhotos.cs로 메뉴 id별 사진을 읽어 캐시, 옵션 팝업 사진 칸을 둥근 모서리 Rectangle + ImageBrush로 변경해 표시, 메뉴 카드 동그라미에도 사진 표시(MenuPhotoConverter, 사진 없으면 컵 아이콘)
+  * **관련 요구사항**: FR-15
 
 ### 5.2 기능 수정 이력
 
