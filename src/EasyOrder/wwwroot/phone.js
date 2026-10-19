@@ -4,6 +4,7 @@
 // - 활성화 후 "대답하기"를 누르면 녹음(Web Speech API, ko-KR)을 시작하고,
 //   한 번 더 누르면 녹음을 끝내고 인식된 텍스트를 키오스크로 보낸다.
 // - 키오스크가 voice-stopped를 보내면(3회 실패) 대답하기를 비활성화한다.
+// - 키오스크가 answer-label을 보내면 버튼 문구를 바꾼다(포장/매장 단계 "대답하기", 메뉴 단계 "주문하기").
 (() => {
   'use strict';
 
@@ -45,6 +46,8 @@
         play(message.file);
       } else if (message.type === 'voice-stopped') {
         stopVoiceInput();
+      } else if (message.type === 'answer-label' && typeof message.label === 'string') {
+        answerButton.textContent = message.label;
       }
     });
     socket.addEventListener('close', () => {
@@ -79,7 +82,7 @@
   }
 
   function play(file) {
-    if (!activated || typeof file !== 'string' || !/^[a-z0-9-]+\.wav$/.test(file)) {
+    if (!activated || typeof file !== 'string' || !/^(tts\/)?[a-z0-9-]+\.wav$/.test(file)) {
       return;
     }
     audioReady.then(() => {

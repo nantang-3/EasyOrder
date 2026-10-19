@@ -26,6 +26,11 @@ public partial class MainWindow : Window
     private static readonly string[] RequiredOptionGroups = ["temp", "size"];
 
     private readonly MenuCatalog _menu;
+    private readonly OrderParser _orderParser;
+    private readonly SpeechSynthesisService _speech = new();
+
+    /// <summary>바로 전에 음성으로 담은 메뉴 묶음 ("취소" 대상, FR-17)</summary>
+    private Guid? _lastVoiceBatchId;
 
     /// <summary>현재 질문 단계에서 음성 인식에 실패한 횟수 (FR-09)</summary>
     private int _voiceFailCount;
@@ -60,6 +65,7 @@ public partial class MainWindow : Window
         InitializeComponent();
 
         _menu = MenuRepository.Load();
+        _orderParser = new OrderParser(_menu);
         CategoryList.ItemsSource = _menu.Categories;
 
         OrderItemsList.ItemsSource = _orderItems;
@@ -137,6 +143,13 @@ public partial class MainWindow : Window
     /// <summary>화면 아래 음성 안내 칸: 음성 세션에서만 표시 (FR-01, FR-05, FR-08)</summary>
     private void UpdateVoiceBar()
     {
+        if (IsVoiceSession && CurrentScreen is KioskScreen.DineSelect or KioskScreen.Menu)
+        {
+            // 휴대폰 버튼 문구: 포장/매장 단계 "대답하기", 메뉴 단계 "주문하기" (FR-06)
+            var label = CurrentScreen == KioskScreen.Menu ? "주문하기" : "대답하기";
+            _ = App.WebServer.SendToActiveAsync(new { type = "answer-label", label });
+        }
+
         VoiceBar.Visibility = VisibleIf(IsVoiceSession && CurrentScreen is (KioskScreen.DineSelect or KioskScreen.Menu));
         if (CurrentScreen == KioskScreen.DineSelect)
         {
@@ -156,6 +169,7 @@ public partial class MainWindow : Window
         CurrentDineMode = null;
         IsVoiceSession = false;
         _voiceFailCount = 0;
+        _lastVoiceBatchId = null;
         _orderItems.Clear();
         _completeTimer.Stop();
         CompleteScreen.Visibility = Visibility.Collapsed;
@@ -253,8 +267,92 @@ public partial class MainWindow : Window
                 break;
 
             case KioskScreen.Menu:
-                // 주문(메뉴·수량) 음성 분석은 10/19 작업 (FR-07)
+                HandleOrderSpeech(text);
                 break;
+        }
+    }
+
+    // 메뉴 화면에서 받은 주문 음성 처리: 메뉴·수량 분석 → 주문 목록 → 확인 멘트, "취소" 처리 (FR-07, FR-08, FR-17)
+    private void HandleOrderSpeech(string? text)
+    {
+        var result = _orderParser.Parse(text);
+
+        if (result.IsCancel)
+        {
+            var removed = _lastVoiceBatchId is { } batchId
+                ? _orderItems.Where(item => item.VoiceBatchId == batchId).ToList()
+                : [];
+            if (removed.Count == 0)
+            {
+                OnVoiceRecognitionFailed();
+                return;
+            }
+
+            foreach (var item in removed)
+            {
+                _orderItems.Remove(item);
+            }
+
+            _lastVoiceBatchId = null;
+            _voiceFailCount = 0;
+            _ = App.WebServer.PlayAsync("cancel.wav");
+            return;
+        }
+
+        if (result.Lines.Count == 0)
+        {
+            OnVoiceRecognitionFailed();
+            return;
+        }
+
+        _voiceFailCount = 0;
+        var batch = Guid.NewGuid();
+        _lastVoiceBatchId = batch;
+        foreach (var line in result.Lines)
+        {
+            _orderItems.Add(new OrderItem
+            {
+                Menu = line.Menu,
+                OptionSummary = BuildOptionSummary(line.Category, GetVoiceDefaultSelections(line.Category)) + " (음성 기본값)",
+                IsVoice = true,
+                VoiceBatchId = batch,
+                Quantity = line.Quantity,
+            });
+        }
+
+        var spoken = string.Join(", ", result.Lines.Select(l => $"{l.Menu.Name} {KoreanCount.ToSpoken(l.Quantity)} 잔"));
+        _ = PlayConfirmationAsync($"{spoken} 맞습니까? 아니라면 취소라고 주문하기 버튼을 누르고 말해주세요. 다른메뉴 추가 주문하시면 주문하기버튼을 누르고 주문해주세요.");
+    }
+
+    /// <summary>음성 주문 옵션 기본값: HOT · Normal · 샷 기본 · 우유 (FR-07)</summary>
+    private Dictionary<string, OptionChoice> GetVoiceDefaultSelections(MenuCategory category)
+    {
+        var selections = new Dictionary<string, OptionChoice>();
+        foreach (var groupId in category.OptionGroups)
+        {
+            var group = _menu.OptionGroups.FirstOrDefault(g => g.Id == groupId);
+            var choice = groupId switch
+            {
+                "temp" => group?.Choices.FirstOrDefault(c => c.Label == "HOT"),
+                "size" => group?.Choices.FirstOrDefault(c => c.Label == "Normal"),
+                _ => group?.Choices.FirstOrDefault(c => IsDefaultChoice(group, c)),
+            };
+            if (choice is not null)
+            {
+                selections[groupId] = choice;
+            }
+        }
+
+        return selections;
+    }
+
+    // 확인 멘트를 실행 중 Azure TTS로 만들어 휴대폰에서 재생 (FR-17)
+    private async Task PlayConfirmationAsync(string sentence)
+    {
+        var file = await _speech.SynthesizeAsync(sentence);
+        if (file is not null)
+        {
+            await App.WebServer.PlayAsync(file);
         }
     }
 
