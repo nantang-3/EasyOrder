@@ -11,7 +11,12 @@ namespace EasyOrder;
 /// </summary>
 public partial class MainWindow : Window
 {
+    private const int MaxVoiceFailures = 3;
+
     private readonly MenuCatalog _menu;
+
+    /// <summary>현재 질문 단계에서 음성 인식에 실패한 횟수 (FR-09)</summary>
+    private int _voiceFailCount;
 
     /// <summary>현재 화면 단계</summary>
     public KioskScreen CurrentScreen { get; private set; }
@@ -79,6 +84,7 @@ public partial class MainWindow : Window
     {
         CurrentDineMode = null;
         IsVoiceSession = false;
+        _voiceFailCount = 0;
         OrderList.Items.Clear();
         CategoryList.SelectedIndex = _menu.Categories.Count > 0 ? 0 : -1;
         HomeConfirmOverlay.Visibility = Visibility.Collapsed;
@@ -117,9 +123,14 @@ public partial class MainWindow : Window
 
     private void HandlePhoneMessage(PhoneMessage message)
     {
-        if (message.Type == "voice-activated")
+        switch (message.Type)
         {
-            StartVoiceSession();
+            case "voice-activated":
+                StartVoiceSession();
+                break;
+            case "recognized":
+                HandleRecognized(message.Text);
+                break;
         }
     }
 
@@ -134,9 +145,59 @@ public partial class MainWindow : Window
 
         CurrentDineMode = null;
         IsVoiceSession = true;
+        _voiceFailCount = 0;
         HomeConfirmOverlay.Visibility = Visibility.Collapsed;
         ShowScreen(KioskScreen.DineSelect);
         _ = App.WebServer.PlayAsync("greeting.wav");
+    }
+
+    // 휴대폰 대답하기로 받은 인식 텍스트 처리 (FR-03, FR-05, FR-06, FR-09)
+    private void HandleRecognized(string? text)
+    {
+        if (!IsVoiceSession)
+        {
+            return;
+        }
+
+        switch (CurrentScreen)
+        {
+            case KioskScreen.DineSelect:
+                var mode = DineModeParser.Parse(text);
+                if (mode is null)
+                {
+                    OnVoiceRecognitionFailed();
+                    return;
+                }
+
+                _voiceFailCount = 0;
+                SelectDineMode(mode.Value);
+                _ = App.WebServer.PlayAsync("ask-order.wav");
+                break;
+
+            case KioskScreen.Menu:
+                // 주문(메뉴·수량) 음성 분석은 10/19 작업 (FR-07)
+                break;
+        }
+    }
+
+    // 인식 실패: "천천히 말해주세요." / 3회 실패 시 터치 주문 안내 후 음성 입력 중단, 화면 유지 (FR-09)
+    private void OnVoiceRecognitionFailed()
+    {
+        _voiceFailCount++;
+        if (_voiceFailCount < MaxVoiceFailures)
+        {
+            _ = App.WebServer.PlayAsync("retry.wav");
+            return;
+        }
+
+        IsVoiceSession = false;
+        _ = StopVoiceInputAsync();
+    }
+
+    private static async Task StopVoiceInputAsync()
+    {
+        await App.WebServer.PlayAsync("touch-guide.wav");
+        await App.WebServer.SendToActiveAsync(new { type = "voice-stopped" });
     }
 
     // 대분류 선택 → 가운데에 소속 메뉴 표시 (FR-12)

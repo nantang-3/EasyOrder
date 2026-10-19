@@ -40,6 +40,7 @@ EasyOrder/
 │     │  └─ PhoneMessage.cs
 │     ├─ Services/
 │     │  ├─ CloudflareTunnel.cs
+│     │  ├─ DineModeParser.cs
 │     │  ├─ KioskWebServer.cs
 │     │  ├─ MenuRepository.cs
 │     │  └─ QrCodeImage.cs
@@ -82,6 +83,7 @@ EasyOrder/
 | 음성 | 음성주문활성화 → 인사 음성 | 휴대폰 "음성주문활성화" 터치 시 키오스크가 포장/매장 선택 화면으로 이동하고 휴대폰에서 인사 음성(greeting.wav) 재생, 버튼은 "활성화됨"·초록색으로 바뀌고 이후 반응 없음 | 완료 | 2026-10-16 | 세션 진행 중 활성화 신호는 무시(동작 확인 필요) |
 | 음성 | 터치 주문 안내 음성 | WavGenerator에 터치 주문 안내 문구 추가 및 --only 옵션으로 touch-guide.wav만 생성 | 완료 | 2026-10-16 | - |
 | 음성 | 휴대폰 대답하기·음성 인식 | 활성화 후 마이크 이미지와 "대답하기" 버튼 표시, 누르면 Web Speech API(ko-KR) 녹음 시작·다시 누르면 종료 후 인식 텍스트 전송, 녹음 중 마이크 빨간빛 반짝임 | 완료 | 2026-10-19 | - |
+| 음성 | 포장/매장 음성 인식 | 인식 텍스트에서 포장/매장 동의어 판정 → 식사 방식 저장·메뉴 화면 이동·주문 질문 음성, 실패 시 "천천히 말해주세요.", 질문 단계별 3회 실패 시 터치 주문 안내 후 음성 입력 중단 | 완료 | 2026-10-19 | - |
 
 * **상태 구분**: `대기`, `진행 중`, `완료`, `보류`
 
@@ -125,6 +127,9 @@ EasyOrder/
 * **2026-10-19 휴대폰 대답하기·음성 인식**
   * **개발 내용**: wwwroot/index.html: 활성화 후 버튼 아래 마이크(SVG)·대답하기 줄 표시, 녹음 중 마이크 주변 빨간빛 애니메이션. wwwroot/phone.js: 대답하기 토글로 SpeechRecognition(ko-KR, continuous, 최종 결과만) 시작·종료 후 {type: recognized, text} 전송, 마이크 권한 거부 시 전송 안 함, 키오스크의 voice-stopped 수신 시 대답하기 비활성화
   * **관련 요구사항**: FR-06, FR-16, IR-05
+* **2026-10-19 포장/매장 음성 인식**
+  * **개발 내용**: Services/DineModeParser.cs: 띄어쓰기·문장부호를 무시하고 포장/매장 동의어 포함 여부로 판정(양쪽 모두·둘 다 없음은 실패). MainWindow: recognized 메시지 처리(포장/매장 선택 화면에서 판정 성공 시 SelectDineMode 후 ask-order.wav 재생, 실패 시 retry.wav, 3회째 touch-guide.wav 재생 후 voice-stopped 전송·음성 세션 종료). KioskWebServer: 음성주문을 활성화한 연결이 아닌 곳의 메시지는 무시
+  * **관련 요구사항**: FR-03, FR-04, FR-05, FR-09
 
 ### 5.2 기능 수정 이력
 

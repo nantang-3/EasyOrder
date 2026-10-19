@@ -136,6 +136,11 @@ public sealed class KioskWebServer : IAsyncDisposable
                 {
                     Volatile.Write(ref _activeClient, ws);
                 }
+                else if (!ReferenceEquals(Volatile.Read(ref _activeClient), ws))
+                {
+                    // 음성주문을 활성화한 연결이 아닌 곳의 메시지(인식 텍스트 등)는 무시한다
+                    continue;
+                }
 
                 MessageReceived?.Invoke(message);
             }
