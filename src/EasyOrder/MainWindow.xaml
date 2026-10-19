@@ -104,6 +104,47 @@
             </Setter>
         </Style>
 
+        <!-- 옵션 선택 칸 (선택 시 색 변경, FR-15) -->
+        <Style x:Key="OptionChip" TargetType="RadioButton">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Margin" Value="8" />
+            <Setter Property="MinHeight" Value="104" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="RadioButton">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="3" CornerRadius="22" Padding="8,14">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource TintBrush}" />
+                                <Setter TargetName="Bd" Property="BorderBrush" Value="{StaticResource PrimaryBrush}" />
+                                <Setter Property="Foreground" Value="#17523C" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 테두리 없는 글자 버튼 (수량 숫자, 삭제) -->
+        <Style x:Key="TextButton" TargetType="Button">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <!-- 왼쪽 대분류 목록 항목 -->
         <Style x:Key="CategoryItem" TargetType="ListBoxItem">
             <Setter Property="Height" Value="128" />
@@ -247,7 +288,7 @@
                                 </ItemsControl.ItemsPanel>
                                 <ItemsControl.ItemTemplate>
                                     <DataTemplate>
-                                        <Button Style="{StaticResource CardButton}" Height="300" Margin="12" Tag="{Binding}">
+                                        <Button Style="{StaticResource CardButton}" Height="300" Margin="12" Tag="{Binding}" Click="MenuCard_Click">
                                             <StackPanel>
                                                 <Grid Width="140" Height="140">
                                                     <Ellipse Fill="{StaticResource LightGrayBrush}" />
@@ -278,7 +319,47 @@
                                            HorizontalAlignment="Right" VerticalAlignment="Center" />
                             </Grid>
                             <ScrollViewer Grid.Row="1" Margin="0,24,0,0" VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
-                                <ItemsControl x:Name="OrderItemsList" />
+                                <ItemsControl x:Name="OrderItemsList">
+                                    <ItemsControl.ItemTemplate>
+                                        <DataTemplate>
+                                            <Border Background="White" BorderBrush="{StaticResource DividerBrush}" BorderThickness="2"
+                                                    CornerRadius="24" Padding="22,20" Margin="0,0,0,20">
+                                                <StackPanel>
+                                                    <Grid>
+                                                        <TextBlock Text="{Binding Name}" FontSize="30" FontWeight="Bold" Foreground="{StaticResource TextBrush}"
+                                                                   TextWrapping="Wrap" Margin="0,0,90,0" />
+                                                        <Border x:Name="SourceChip" CornerRadius="22" Padding="16,6" Background="{StaticResource LightGrayBrush}"
+                                                                HorizontalAlignment="Right" VerticalAlignment="Top">
+                                                            <TextBlock x:Name="SourceChipText" Text="{Binding SourceLabel}" FontSize="22" FontWeight="Bold" Foreground="#333333" />
+                                                        </Border>
+                                                    </Grid>
+                                                    <TextBlock Text="{Binding OptionSummary}" FontSize="22" Foreground="{StaticResource SubTextBrush}"
+                                                               TextWrapping="Wrap" Margin="0,14,0,0" />
+                                                    <Grid Margin="0,18,0,0">
+                                                        <StackPanel Orientation="Horizontal">
+                                                            <Button Content="−" Style="{StaticResource OutlineButton}" FontSize="30" Width="58" Height="58"
+                                                                    Tag="{Binding}" Click="OrderItemMinus_Click" />
+                                                            <Button Content="{Binding Quantity}" Style="{StaticResource TextButton}" FontSize="32" FontWeight="Bold"
+                                                                    Width="74" Tag="{Binding}" Click="OrderItemQuantity_Click" />
+                                                            <Button Content="+" Style="{StaticResource OutlineButton}" FontSize="30" Width="58" Height="58"
+                                                                    Tag="{Binding}" Click="OrderItemPlus_Click" />
+                                                        </StackPanel>
+                                                        <Button Style="{StaticResource TextButton}" HorizontalAlignment="Right" Tag="{Binding}"
+                                                                Click="OrderItemDelete_Click">
+                                                            <TextBlock Text="삭제" FontSize="24" Foreground="{StaticResource SubTextBrush}" TextDecorations="Underline" />
+                                                        </Button>
+                                                    </Grid>
+                                                </StackPanel>
+                                            </Border>
+                                            <DataTemplate.Triggers>
+                                                <DataTrigger Binding="{Binding IsVoice}" Value="True">
+                                                    <Setter TargetName="SourceChip" Property="Background" Value="#E5EDF7" />
+                                                    <Setter TargetName="SourceChipText" Property="Foreground" Value="#2F5C9A" />
+                                                </DataTrigger>
+                                            </DataTemplate.Triggers>
+                                        </DataTemplate>
+                                    </ItemsControl.ItemTemplate>
+                                </ItemsControl>
                             </ScrollViewer>
                             <StackPanel Grid.Row="2">
                                 <Border BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,2,0,0" Padding="0,24,0,24">
@@ -288,8 +369,10 @@
                                                    Foreground="{StaticResource TextBrush}" HorizontalAlignment="Right" />
                                     </Grid>
                                 </Border>
-                                <Button x:Name="CompleteOrderButton" Content="주문 완료" Style="{StaticResource PrimaryButton}" Height="100" IsEnabled="False" />
-                                <Button x:Name="ClearOrderButton" Content="전체 삭제" Style="{StaticResource OutlineButton}" Height="72" Margin="0,18,0,0" IsEnabled="False" />
+                                <Button x:Name="CompleteOrderButton" Content="주문 완료" Style="{StaticResource PrimaryButton}" Height="100" IsEnabled="False"
+                                        Click="CompleteOrderButton_Click" />
+                                <Button x:Name="ClearOrderButton" Content="전체 삭제" Style="{StaticResource OutlineButton}" Height="72" Margin="0,18,0,0" IsEnabled="False"
+                                        Click="ClearOrderButton_Click" />
                             </StackPanel>
                         </Grid>
                     </Border>
@@ -404,18 +487,104 @@
                 </Border>
             </Grid>
 
-            <!-- 시작페이지로 확인 알림: 화면 가운데 (FR-11) -->
-            <Grid x:Name="HomeConfirmOverlay" Background="#99000000" Visibility="Collapsed">
+            <!-- ── 주문 완료 화면 (FR-19) ── -->
+            <Grid x:Name="CompleteScreen" Background="{StaticResource DarkGreenBrush}" Visibility="Collapsed">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Path Data="{StaticResource CupIcon}" Stroke="#E3EEE8" StrokeThickness="12" Width="300" Height="200"
+                          Stretch="Uniform" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
+                    <TextBlock Text="주문이 완료되었습니다." FontSize="80" FontWeight="Bold" Foreground="White"
+                               HorizontalAlignment="Center" Margin="0,100,0,0" />
+                    <Button Content="시작페이지로" Style="{StaticResource OutlineButton}" FontSize="36" Width="420" Height="120"
+                            Margin="0,120,0,0" Click="CompleteHomeButton_Click" />
+                </StackPanel>
+            </Grid>
+
+            <!-- ── 옵션 팝업 (FR-15) ── -->
+            <Grid x:Name="OptionPopup" Background="#99000000" Visibility="Collapsed">
+                <Border Background="White" Width="960" CornerRadius="44" Padding="56,56,56,56"
+                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <StackPanel>
+                        <Grid>
+                            <StackPanel Orientation="Horizontal">
+                                <Border Width="190" Height="190" CornerRadius="28" Background="{StaticResource LightGrayBrush}"
+                                        BorderBrush="#C9CCCA" BorderThickness="2">
+                                    <Grid>
+                                        <Image x:Name="PopupMenuImage" Stretch="UniformToFill" />
+                                        <TextBlock x:Name="PopupImagePlaceholder" Text="메뉴 사진" FontSize="24" Foreground="{StaticResource SubTextBrush}"
+                                                   HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </Grid>
+                                </Border>
+                                <StackPanel Margin="36,10,0,0" VerticalAlignment="Center">
+                                    <Border Background="{StaticResource LightGrayBrush}" CornerRadius="26" Padding="20,8" HorizontalAlignment="Left">
+                                        <TextBlock x:Name="PopupCategoryText" FontSize="24" FontWeight="Bold" Foreground="#333333" />
+                                    </Border>
+                                    <TextBlock x:Name="PopupMenuName" FontSize="64" FontWeight="Bold" Foreground="{StaticResource TextBrush}"
+                                               Margin="0,18,0,0" TextWrapping="Wrap" MaxWidth="460" />
+                                </StackPanel>
+                            </StackPanel>
+                            <Button Content="✕" Style="{StaticResource OutlineButton}" FontSize="30" Width="76" Height="76"
+                                    HorizontalAlignment="Right" VerticalAlignment="Top" Click="PopupCancel_Click" />
+                        </Grid>
+                        <!-- 옵션: 칸 안에서 스크롤 -->
+                        <ScrollViewer MaxHeight="860" Margin="0,30,0,0" VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
+                            <StackPanel x:Name="OptionGroupsPanel" />
+                        </ScrollViewer>
+                        <Border BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,2,0,0" Margin="0,24,0,0" Padding="0,30,0,0">
+                            <Grid>
+                                <TextBlock Text="수량" FontSize="34" FontWeight="Bold" Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" />
+                                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                                    <Button Content="−" Style="{StaticResource OutlineButton}" FontSize="36" Width="84" Height="84" Click="PopupMinus_Click" />
+                                    <Button x:Name="PopupQuantityButton" Content="1" Style="{StaticResource TextButton}" FontSize="44" FontWeight="Bold"
+                                            Width="110" Click="PopupQuantity_Click" />
+                                    <Button Content="+" Style="{StaticResource OutlineButton}" FontSize="36" Width="84" Height="84" Click="PopupPlus_Click" />
+                                </StackPanel>
+                            </Grid>
+                        </Border>
+                        <Grid Margin="0,44,0,0" Height="116">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="270" />
+                                <ColumnDefinition Width="22" />
+                                <ColumnDefinition Width="*" />
+                            </Grid.ColumnDefinitions>
+                            <Button Content="취소" Style="{StaticResource OutlineButton}" FontSize="36" Click="PopupCancel_Click" />
+                            <Button x:Name="PopupAddButton" Grid.Column="2" Content="주문 목록에 담기" Style="{StaticResource PrimaryButton}"
+                                    FontSize="38" IsEnabled="False" Click="PopupAdd_Click" />
+                        </Grid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- 확인 알림: 화면 가운데 (FR-11 시작페이지로, FR-18 전체 삭제) -->
+            <Grid x:Name="ConfirmOverlay" Background="#99000000" Visibility="Collapsed">
                 <Border Background="White" Width="880" Padding="56" CornerRadius="40"
                         HorizontalAlignment="Center" VerticalAlignment="Center">
                     <StackPanel>
-                        <TextBlock Text="처음 화면으로 돌아가시겠습니까?" FontSize="50" FontWeight="Bold" Foreground="{StaticResource TextBrush}"
+                        <TextBlock x:Name="ConfirmMessage" FontSize="50" FontWeight="Bold" Foreground="{StaticResource TextBrush}"
                                    TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,56" />
                         <UniformGrid Columns="2">
                             <Button Content="예" Style="{StaticResource PrimaryButton}" Height="140" Margin="0,0,20,0"
-                                    Click="HomeConfirmYes_Click" />
+                                    Click="ConfirmYes_Click" />
                             <Button Content="아니요" Style="{StaticResource OutlineButton}" FontSize="40" Height="140" Margin="20,0,0,0"
-                                    Click="HomeConfirmNo_Click" />
+                                    Click="ConfirmNo_Click" />
+                        </UniformGrid>
+                    </StackPanel>
+                </Border>
+            </Grid>
+
+            <!-- 앱 내 숫자 키패드 (수량 직접 입력, FR-15) -->
+            <Grid x:Name="KeypadOverlay" Background="#99000000" Visibility="Collapsed">
+                <Border Background="White" Width="640" Padding="44" CornerRadius="40"
+                        HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <StackPanel>
+                        <TextBlock Text="수량 입력 (1~999)" FontSize="32" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                        <Border Background="{StaticResource LightGrayBrush}" CornerRadius="20" Height="120" Margin="0,24,0,24">
+                            <TextBlock x:Name="KeypadDisplay" FontSize="64" FontWeight="Bold" Foreground="{StaticResource TextBrush}"
+                                       HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,32,0" />
+                        </Border>
+                        <UniformGrid x:Name="KeypadGrid" Columns="3" Height="520" />
+                        <UniformGrid Columns="2" Height="110" Margin="0,16,0,0">
+                            <Button Content="닫기" Style="{StaticResource OutlineButton}" FontSize="34" Margin="0,0,10,0" Click="KeypadClose_Click" />
+                            <Button Content="확인" Style="{StaticResource PrimaryButton}" FontSize="36" Margin="10,0,0,0" Click="KeypadOk_Click" />
                         </UniformGrid>
                     </StackPanel>
                 </Border>

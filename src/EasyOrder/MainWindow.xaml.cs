@@ -1,9 +1,16 @@
-﻿using System.Windows;
+﻿using System.Collections.ObjectModel;
+using System.Collections.Specialized;
+using System.ComponentModel;
+using System.Text.Json;
+using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using EasyOrder.Models;
 using EasyOrder.Services;
+using MenuItem = EasyOrder.Models.MenuItem;
 
 namespace EasyOrder;
 
@@ -13,11 +20,30 @@ namespace EasyOrder;
 public partial class MainWindow : Window
 {
     private const int MaxVoiceFailures = 3;
+    private static readonly TimeSpan CompleteScreenDuration = TimeSpan.FromSeconds(30);
+
+    /// <summary>담기 전에 반드시 골라야 하는 옵션 그룹 (온도·사이즈, FR-15)</summary>
+    private static readonly string[] RequiredOptionGroups = ["temp", "size"];
 
     private readonly MenuCatalog _menu;
 
     /// <summary>현재 질문 단계에서 음성 인식에 실패한 횟수 (FR-09)</summary>
     private int _voiceFailCount;
+
+    /// <summary>주문 목록 (FR-08, FR-12)</summary>
+    private readonly ObservableCollection<OrderItem> _orderItems = [];
+
+    // 옵션 팝업 상태
+    private MenuCategory? _popupCategory;
+    private MenuItem? _popupMenu;
+    private readonly Dictionary<string, OptionChoice> _popupSelections = [];
+    private int _popupQuantity = 1;
+
+    // 확인 알림·키패드·완료 화면
+    private Action? _confirmAction;
+    private Action<int>? _keypadCallback;
+    private string _keypadInput = "";
+    private readonly DispatcherTimer _completeTimer = new() { Interval = CompleteScreenDuration };
 
     /// <summary>현재 화면 단계</summary>
     public KioskScreen CurrentScreen { get; private set; }
@@ -34,6 +60,11 @@ public partial class MainWindow : Window
 
         _menu = MenuRepository.Load();
         CategoryList.ItemsSource = _menu.Categories;
+
+        OrderItemsList.ItemsSource = _orderItems;
+        _orderItems.CollectionChanged += OnOrderItemsChanged;
+        BuildKeypad();
+        _completeTimer.Tick += (_, _) => ResetSession();
 
         ResetSession();
 
@@ -124,8 +155,13 @@ public partial class MainWindow : Window
         CurrentDineMode = null;
         IsVoiceSession = false;
         _voiceFailCount = 0;
+        _orderItems.Clear();
+        _completeTimer.Stop();
+        CompleteScreen.Visibility = Visibility.Collapsed;
+        OptionPopup.Visibility = Visibility.Collapsed;
+        KeypadOverlay.Visibility = Visibility.Collapsed;
         CategoryList.SelectedIndex = _menu.Categories.Count > 0 ? 0 : -1;
-        HomeConfirmOverlay.Visibility = Visibility.Collapsed;
+        ConfirmOverlay.Visibility = Visibility.Collapsed;
         ShowScreen(KioskScreen.Qr);
     }
 
@@ -184,7 +220,7 @@ public partial class MainWindow : Window
         CurrentDineMode = null;
         IsVoiceSession = true;
         _voiceFailCount = 0;
-        HomeConfirmOverlay.Visibility = Visibility.Collapsed;
+        ConfirmOverlay.Visibility = Visibility.Collapsed;
         ShowScreen(KioskScreen.DineSelect);
         _ = App.WebServer.PlayAsync("greeting.wav");
     }
@@ -251,16 +287,384 @@ public partial class MainWindow : Window
         CategoryCount.Text = category is null ? "" : $"{category.Menus.Count}개 메뉴";
     }
 
+    // ── 확인 알림 (FR-11, FR-18) ──
+    private void ShowConfirm(string message, Action onYes)
+    {
+        ConfirmMessage.Text = message;
+        _confirmAction = onYes;
+        ConfirmOverlay.Visibility = Visibility.Visible;
+    }
+
+    private void ConfirmYes_Click(object sender, RoutedEventArgs e)
+    {
+        ConfirmOverlay.Visibility = Visibility.Collapsed;
+        var action = _confirmAction;
+        _confirmAction = null;
+        action?.Invoke();
+    }
+
+    private void ConfirmNo_Click(object sender, RoutedEventArgs e)
+    {
+        ConfirmOverlay.Visibility = Visibility.Collapsed;
+        _confirmAction = null;
+    }
+
     // 시작페이지로 → 확인 알림 (FR-11)
     private void HomeButton_Click(object sender, RoutedEventArgs e)
     {
-        HomeConfirmOverlay.Visibility = Visibility.Visible;
+        ShowConfirm("처음 화면으로 돌아가시겠습니까?", ResetSession);
     }
 
-    private void HomeConfirmYes_Click(object sender, RoutedEventArgs e) => ResetSession();
-
-    private void HomeConfirmNo_Click(object sender, RoutedEventArgs e)
+    // ── 옵션 팝업 (FR-15) ──
+    private void MenuCard_Click(object sender, RoutedEventArgs e)
     {
-        HomeConfirmOverlay.Visibility = Visibility.Collapsed;
+        if (sender is Button { Tag: MenuItem menu } && CategoryList.SelectedItem is MenuCategory category)
+        {
+            OpenOptionPopup(category, menu);
+        }
+    }
+
+    private void OpenOptionPopup(MenuCategory category, MenuItem menu)
+    {
+        _popupCategory = category;
+        _popupMenu = menu;
+        _popupSelections.Clear();
+        _popupQuantity = 1;
+
+        PopupCategoryText.Text = category.Name;
+        PopupMenuName.Text = menu.Name;
+        PopupMenuImage.Source = null;
+        PopupImagePlaceholder.Visibility = Visibility.Visible;
+        PopupQuantityButton.Content = "1";
+
+        OptionGroupsPanel.Children.Clear();
+        foreach (var groupId in category.OptionGroups)
+        {
+            var group = _menu.OptionGroups.FirstOrDefault(g => g.Id == groupId);
+            if (group is not null)
+            {
+                OptionGroupsPanel.Children.Add(CreateOptionGroupView(menu, group));
+            }
+        }
+
+        UpdatePopupAddButton();
+        OptionPopup.Visibility = Visibility.Visible;
+    }
+
+    private UIElement CreateOptionGroupView(MenuItem menu, OptionGroup group)
+    {
+        var panel = new StackPanel { Margin = new Thickness(0, 10, 0, 18) };
+
+        var header = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 6) };
+        header.Children.Add(new TextBlock
+        {
+            Text = group.Name,
+            FontSize = 34,
+            FontWeight = FontWeights.Bold,
+            Foreground = (Brush)FindResource("TextBrush"),
+        });
+        if (group.Id == "shot")
+        {
+            header.Children.Add(new TextBlock
+            {
+                Text = "샷추가는 최대 4회",
+                FontSize = 24,
+                Foreground = (Brush)FindResource("SubTextBrush"),
+                Margin = new Thickness(18, 0, 0, 4),
+                VerticalAlignment = VerticalAlignment.Bottom,
+            });
+        }
+
+        panel.Children.Add(header);
+
+        var grid = new UniformGrid { Columns = group.Choices.Count <= 2 ? 2 : 4, Margin = new Thickness(-8, 0, -8, 0) };
+        var groupName = $"opt-{menu.Id}-{group.Id}";
+        foreach (var choice in group.Choices)
+        {
+            var chip = new RadioButton
+            {
+                GroupName = groupName,
+                Style = (Style)FindResource("OptionChip"),
+                Content = CreateChipContent(group, choice),
+                Tag = (group.Id, choice),
+                IsChecked = IsDefaultChoice(group, choice),
+            };
+            if (chip.IsChecked == true)
+            {
+                _popupSelections[group.Id] = choice;
+            }
+
+            chip.Checked += OptionChip_Checked;
+            grid.Children.Add(chip);
+        }
+
+        panel.Children.Add(grid);
+        return panel;
+    }
+
+    private static UIElement CreateChipContent(OptionGroup group, OptionChoice choice)
+    {
+        if (choice.Value is not { } value)
+        {
+            return new TextBlock { Text = choice.Label, FontSize = group.Choices.Count <= 2 ? 34 : 28, FontWeight = FontWeights.Bold, TextAlignment = TextAlignment.Center, TextWrapping = TextWrapping.Wrap };
+        }
+
+        // 샷 조절: 위 줄 이름, 아래 줄 숫자 (화면 설계서)
+        var title = value > 0 ? "샷추가" : choice.Label;
+        var stack = new StackPanel();
+        stack.Children.Add(new TextBlock { Text = title, FontSize = 26, FontWeight = FontWeights.Bold, HorizontalAlignment = HorizontalAlignment.Center });
+        stack.Children.Add(new TextBlock
+        {
+            Text = value > 0 ? $"+{value}" : value < 0 ? $"−{-value}" : "0",
+            FontSize = 24,
+            Opacity = 0.7,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Margin = new Thickness(0, 8, 0, 0),
+        });
+        return stack;
+    }
+
+    /// <summary>menu.json의 기본값(샷 0, 우유 "우유")과 일치하는 선택지인지. 온도·사이즈는 기본값 없음</summary>
+    private static bool IsDefaultChoice(OptionGroup group, OptionChoice choice)
+    {
+        if (group.Default is not { } def)
+        {
+            return false;
+        }
+
+        return def.ValueKind switch
+        {
+            JsonValueKind.Number => choice.Value == def.GetInt32(),
+            JsonValueKind.String => choice.Label == def.GetString(),
+            _ => false,
+        };
+    }
+
+    private void OptionChip_Checked(object sender, RoutedEventArgs e)
+    {
+        if (sender is RadioButton { Tag: ValueTuple<string, OptionChoice> tag })
+        {
+            _popupSelections[tag.Item1] = tag.Item2;
+            UpdatePopupAddButton();
+        }
+    }
+
+    // 온도·사이즈를 고르지 않으면 담기 비활성 (FR-15)
+    private void UpdatePopupAddButton()
+    {
+        PopupAddButton.IsEnabled = _popupCategory is not null && RequiredOptionGroups
+            .Where(id => _popupCategory.OptionGroups.Contains(id))
+            .All(_popupSelections.ContainsKey);
+    }
+
+    private void SetPopupQuantity(int quantity)
+    {
+        _popupQuantity = Math.Clamp(quantity, 1, OrderItem.MaxQuantity);
+        PopupQuantityButton.Content = _popupQuantity.ToString();
+    }
+
+    private void PopupMinus_Click(object sender, RoutedEventArgs e) => SetPopupQuantity(_popupQuantity - 1);
+
+    private void PopupPlus_Click(object sender, RoutedEventArgs e) => SetPopupQuantity(_popupQuantity + 1);
+
+    private void PopupQuantity_Click(object sender, RoutedEventArgs e) => OpenKeypad(SetPopupQuantity);
+
+    private void PopupCancel_Click(object sender, RoutedEventArgs e)
+    {
+        OptionPopup.Visibility = Visibility.Collapsed;
+    }
+
+    private void PopupAdd_Click(object sender, RoutedEventArgs e)
+    {
+        if (_popupCategory is null || _popupMenu is null || !PopupAddButton.IsEnabled)
+        {
+            return;
+        }
+
+        _orderItems.Add(new OrderItem
+        {
+            Menu = _popupMenu,
+            OptionSummary = BuildOptionSummary(_popupCategory, _popupSelections),
+            IsVoice = false,
+            Quantity = _popupQuantity,
+        });
+        OptionPopup.Visibility = Visibility.Collapsed;
+    }
+
+    /// <summary>옵션 요약 문구 (예: "ICE · Normal · 샷 기본", "ICE · Normal · 두유")</summary>
+    private static string BuildOptionSummary(MenuCategory category, IReadOnlyDictionary<string, OptionChoice> selections)
+    {
+        var parts = new List<string>();
+        foreach (var groupId in category.OptionGroups)
+        {
+            if (!selections.TryGetValue(groupId, out var choice))
+            {
+                continue;
+            }
+
+            parts.Add(groupId == "shot" && choice.Value == 0 ? "샷 기본" : choice.Label);
+        }
+
+        return string.Join(" · ", parts);
+    }
+
+    // ── 주문 목록 (FR-12) ──
+    private void OnOrderItemsChanged(object? sender, NotifyCollectionChangedEventArgs e)
+    {
+        if (e.NewItems is not null)
+        {
+            foreach (OrderItem item in e.NewItems)
+            {
+                item.PropertyChanged += OnOrderItemPropertyChanged;
+            }
+        }
+
+        if (e.OldItems is not null)
+        {
+            foreach (OrderItem item in e.OldItems)
+            {
+                item.PropertyChanged -= OnOrderItemPropertyChanged;
+            }
+        }
+
+        UpdateOrderSummary();
+    }
+
+    private void OnOrderItemPropertyChanged(object? sender, PropertyChangedEventArgs e) => UpdateOrderSummary();
+
+    private void UpdateOrderSummary()
+    {
+        OrderCountText.Text = $"{_orderItems.Count}개 항목";
+        TotalQuantityText.Text = $"{_orderItems.Sum(i => i.Quantity)}잔";
+        CompleteOrderButton.IsEnabled = _orderItems.Count > 0;
+        ClearOrderButton.IsEnabled = _orderItems.Count > 0;
+    }
+
+    private void OrderItemMinus_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: OrderItem item })
+        {
+            item.Quantity--;
+        }
+    }
+
+    private void OrderItemPlus_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: OrderItem item })
+        {
+            item.Quantity++;
+        }
+    }
+
+    private void OrderItemQuantity_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: OrderItem item })
+        {
+            OpenKeypad(value => item.Quantity = value);
+        }
+    }
+
+    private void OrderItemDelete_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: OrderItem item })
+        {
+            _orderItems.Remove(item);
+        }
+    }
+
+    // 전체 삭제 → 확인 알림 (FR-18)
+    private void ClearOrderButton_Click(object sender, RoutedEventArgs e)
+    {
+        ShowConfirm("메뉴 전체를 삭제시킵니다. 정말로 하시겠습니까?", () => _orderItems.Clear());
+    }
+
+    // 주문 완료 → 완료 화면, 30초 후 QR 화면 (FR-19)
+    private void CompleteOrderButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_orderItems.Count == 0)
+        {
+            return;
+        }
+
+        CompleteScreen.Visibility = Visibility.Visible;
+        _completeTimer.Stop();
+        _completeTimer.Start();
+    }
+
+    private void CompleteHomeButton_Click(object sender, RoutedEventArgs e) => ResetSession();
+
+    // ── 앱 내 숫자 키패드 (FR-15) ──
+    private void BuildKeypad()
+    {
+        string[] keys = ["1", "2", "3", "4", "5", "6", "7", "8", "9", "지움", "0", "←"];
+        foreach (var key in keys)
+        {
+            var button = new Button
+            {
+                Content = key,
+                Tag = key,
+                Style = (Style)FindResource("OutlineButton"),
+                FontSize = key.Length == 1 ? 44 : 32,
+                Margin = new Thickness(8),
+            };
+            button.Click += KeypadKey_Click;
+            KeypadGrid.Children.Add(button);
+        }
+    }
+
+    private void OpenKeypad(Action<int> callback)
+    {
+        _keypadCallback = callback;
+        _keypadInput = "";
+        KeypadDisplay.Text = "";
+        KeypadOverlay.Visibility = Visibility.Visible;
+    }
+
+    private void KeypadKey_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { Tag: string key })
+        {
+            return;
+        }
+
+        switch (key)
+        {
+            case "지움":
+                _keypadInput = "";
+                break;
+            case "←":
+                if (_keypadInput.Length > 0)
+                {
+                    _keypadInput = _keypadInput[..^1];
+                }
+
+                break;
+            default:
+                if (_keypadInput.Length < 3 && !(_keypadInput.Length == 0 && key == "0"))
+                {
+                    _keypadInput += key;
+                }
+
+                break;
+        }
+
+        KeypadDisplay.Text = _keypadInput;
+    }
+
+    private void KeypadOk_Click(object sender, RoutedEventArgs e)
+    {
+        if (int.TryParse(_keypadInput, out var value) && value is >= 1 and <= OrderItem.MaxQuantity)
+        {
+            _keypadCallback?.Invoke(value);
+        }
+
+        KeypadOverlay.Visibility = Visibility.Collapsed;
+        _keypadCallback = null;
+    }
+
+    private void KeypadClose_Click(object sender, RoutedEventArgs e)
+    {
+        KeypadOverlay.Visibility = Visibility.Collapsed;
+        _keypadCallback = null;
     }
 }
