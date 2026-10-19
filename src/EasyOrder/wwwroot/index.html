@@ -8,21 +8,25 @@
     html, body { height: 100%; margin: 0; }
     body {
       display: flex;
+      flex-direction: column;
       align-items: center;
       justify-content: center;
+      gap: 8vw;
       background: #fff;
       font-family: system-ui, sans-serif;
     }
-    #activate {
-      font-size: 8vw;
+    button {
       font-weight: bold;
-      padding: 6vw 8vw;
       border: 3px solid #333;
       border-radius: 16px;
       background: #f2f2f2;
       color: #000;
     }
-    /* 활성화 후: 색 변경, 더 이상 반응하지 않음 */
+    #activate {
+      font-size: 8vw;
+      padding: 6vw 8vw;
+    }
+    /* 활성화 후: 색 변경, 더 이상 반응하지 않음 (FR-14) */
     #activate.activated,
     #activate:disabled {
       background: #2e7d32;
@@ -30,11 +34,54 @@
       color: #fff;
       opacity: 1;
     }
+    /* 대답하기 줄: 왼쪽 마이크 이미지 + 대답하기 버튼 (FR-16) */
+    #answer-row {
+      display: flex;
+      align-items: center;
+      gap: 5vw;
+    }
+    #answer-row[hidden] { display: none; }
+    #answer {
+      font-size: 7vw;
+      padding: 5vw 8vw;
+    }
+    #answer:disabled { opacity: 0.4; }
+    #mic {
+      width: 16vw;
+      height: 16vw;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f2f2f2;
+      border: 3px solid #333;
+    }
+    #mic svg { width: 60%; height: 60%; }
+    /* 듣는 중: 마이크 주변 빨간빛이 살짝 반짝임 */
+    #mic.listening { animation: mic-glow 0.9s ease-in-out infinite alternate; }
+    @keyframes mic-glow {
+      from { box-shadow: 0 0 0 0 rgba(229, 57, 53, 0.15); }
+      to   { box-shadow: 0 0 4vw 1.5vw rgba(229, 57, 53, 0.65); }
+    }
   </style>
 </head>
 <body>
   <!-- FR-14: 화면 가운데 음성주문활성화 버튼 -->
   <button id="activate" type="button">음성주문활성화</button>
+
+  <!-- FR-16: 활성화 후 표시 -->
+  <div id="answer-row" hidden>
+    <span id="mic" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#333" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="9" y="2" width="6" height="12" rx="3" />
+        <path d="M5 10v1a7 7 0 0 0 14 0v-1" />
+        <line x1="12" y1="18" x2="12" y2="22" />
+        <line x1="8" y1="22" x2="16" y2="22" />
+      </svg>
+    </span>
+    <button id="answer" type="button">대답하기</button>
+  </div>
+
   <script src="phone.js"></script>
 </body>
 </html>
