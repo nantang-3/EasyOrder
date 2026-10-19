@@ -242,6 +242,10 @@ EasyOrder/
   * **수정 대상 기능**: src/EasyOrder/Services/KioskWebServer.cs, src/EasyOrder/App.xaml.cs (앱 종료 처리)
   * **수정 방식 (How)**: 종료 신호(CancellationTokenSource)를 두어 앱 종료 시 열린 WebSocket 수신을 먼저 취소하고, 내장 웹서버 종료(StopAsync)는 최대 3초만 기다리도록 변경. 내장 웹서버가 콘솔용 수명 관리(프로세스 종료 이벤트 대기)를 쓰지 않도록 EmbeddedHostLifetime으로 교체하고, App 종료 시 cloudflared·웹서버 정리를 최대 3초만 기다린 뒤 Environment.Exit로 프로세스를 확실히 종료
   * **수정 사유 (Why)**: 휴대폰이 WebSocket으로 연결된 상태에서 키오스크 창을 닫으면 웹서버가 연결 종료를 기다리느라 프로세스가 끝나지 않음(세션 로그 테스트 중 발견, 휴대폰 미접속 상태에서도 창을 닫은 뒤 5초 넘게 남는 것을 확인)
+* **2026-10-19 README 문제 해결에 휴대폰 DNS 안내 추가**
+  * **수정 대상 기능**: README.md (7.5 문제 해결)
+  * **수정 방식 (How)**: 휴대폰에서 QR 주소가 DNS_PROBE_FINISHED_NXDOMAIN으로 열리지 않을 때 프라이빗 DNS(one.one.one.one) 설정·와이파이 연결·1분 대기 방법을 추가
+  * **수정 사유 (Why)**: 앱을 자주 다시 실행해 터널 주소가 바뀌는 동안 휴대폰(KT 모바일 데이터) DNS가 새 주소를 찾지 못하는 현상 발생, 프라이빗 DNS 변경으로 해결 확인
 
 ## 6. 테스트 결과
 
@@ -310,4 +314,5 @@ dotnet run --project tools/WavGenerator -- --only greeting.wav
 * **"내장 웹서버를 시작하지 못했습니다"**: 다른 프로그램이 포트 6703을 사용 중. `Get-Process EasyOrder, cloudflared | Stop-Process -Force` 후 다시 실행
 * **QR 자리에 "cloudflared를 찾을 수 없습니다"**: cloudflared 설치 후 PowerShell을 다시 열고 실행
 * **음성 인식 내용 확인(디버깅)**: 실행 폴더 `src/EasyOrder/bin/Debug/net10.0-windows/logs/recognized-YYYYMMDD.log`에 세션별 인식 텍스트가 기록됨
+* **휴대폰에서 QR 주소가 "사이트에 연결할 수 없음(DNS_PROBE_FINISHED_NXDOMAIN)"**: 새 터널 주소를 너무 빨리 조회해 통신사 DNS가 "없는 주소"를 기억한 경우. 휴대폰 설정 → 연결 → 기타 연결 설정 → 프라이빗 DNS → 호스트 이름 `one.one.one.one`으로 바꾸거나 와이파이에 연결한 뒤, QR 표시 후 1분쯤 기다렸다가 다시 접속
 * **휴대폰에서 소리가 안 남**: "음성주문활성화"를 눌렀는지, 휴대폰 미디어 볼륨·블루투스 연결 확인
