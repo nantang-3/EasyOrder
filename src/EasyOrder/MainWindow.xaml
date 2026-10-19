@@ -184,6 +184,11 @@
                 <!-- 머리글: 매장명·식사 방식·단계 -->
                 <Border Grid.Row="0" Background="White" BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,0,0,2">
                     <Grid Margin="48,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
                             <TextBlock Text="폴리텍점" FontSize="42" FontWeight="Bold" Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" />
                             <Border x:Name="DineBadge" Background="{StaticResource TintBrush}" CornerRadius="28"
@@ -191,7 +196,12 @@
                                 <TextBlock x:Name="DineBadgeText" FontSize="26" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" />
                             </Border>
                         </StackPanel>
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                        <!-- 무응답 타임아웃 남은 시간 (FR-10) -->
+                        <Border Grid.Column="1" HorizontalAlignment="Center" VerticalAlignment="Center"
+                                Background="{StaticResource LightGrayBrush}" CornerRadius="30" Padding="20,10">
+                            <TextBlock x:Name="IdleCountdownText" FontSize="24" FontWeight="Bold" Foreground="{StaticResource SubTextBrush}" />
+                        </Border>
+                        <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                             <Border x:Name="StepDinePill" CornerRadius="30" Padding="26,12">
                                 <TextBlock x:Name="StepDineText" Text="1 식사 방식" FontSize="26" />
                             </Border>
