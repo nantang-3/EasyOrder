@@ -52,6 +52,7 @@ EasyOrder/
 │     │  ├─ MenuRepository.cs
 │     │  ├─ OrderParser.cs
 │     │  ├─ QrCodeImage.cs
+│     │  ├─ SessionLog.cs
 │     │  └─ SpeechSynthesisService.cs
 │     ├─ wwwroot/
 │     │  ├─ audio/
@@ -103,6 +104,7 @@ EasyOrder/
 | 화면 | 메뉴 사진 | 사용자 제공 메뉴 사진 26종을 400×400 PNG로 줄여 메뉴 카드 동그라미와 옵션 팝업의 메뉴 사진 칸에 표시, 사진이 없으면 컵 아이콘·"메뉴 사진" 자리표시 | 완료 | 2026-10-19 | - |
 | 예외 처리 | 중복 실행 방지·오류 알림 | 이미 실행 중이면 알림 후 종료, 시작·실행 중 오류와 웹서버 포트 문제를 알림으로 표시 | 완료 | 2026-10-19 | - |
 | 테스트 | 통합 테스트 | 시작·터치 주문·음성 주문·예외 처리 17개 항목 테스트(6장) | 완료 | 2026-10-19 | 17개 항목 모두 통과 |
+| 예외 처리 | 세션별 인식 텍스트 로그 | 음성 세션마다 세션 ID를 만들고, 받은 인식 텍스트를 실행 폴더 logs/recognized-YYYYMMDD.log에 기록(음성 데이터는 저장 안 함) | 완료 | 2026-10-19 | 디버깅용 |
 
 * **상태 구분**: `대기`, `진행 중`, `완료`, `보류`
 
@@ -170,6 +172,9 @@ EasyOrder/
 * **2026-10-19 메뉴 사진**
   * **개발 내용**: 「메뉴 사진」 폴더의 원본(1024×1024)을 400×400 PNG로 줄여 src/EasyOrder/Images/Menu/{메뉴 id}.png로 저장(빌드 시 출력 폴더로 복사). Services/MenuPhotos.cs로 메뉴 id별 사진을 읽어 캐시, 옵션 팝업 사진 칸을 둥근 모서리 Rectangle + ImageBrush로 변경해 표시, 메뉴 카드 동그라미에도 사진 표시(MenuPhotoConverter, 사진 없으면 컵 아이콘)
   * **관련 요구사항**: FR-15
+* **2026-10-19 세션별 인식 텍스트 로그**
+  * **개발 내용**: Services/SessionLog.cs: 실행 폴더 logs/recognized-YYYYMMDD.log에 "시각 [탭] 세션 ID [탭] 인식 텍스트"를 한 줄씩 추가(기록 실패는 무시). MainWindow: 음성주문활성화 시 세션 ID 생성, 인식 텍스트를 받을 때마다 기록. 요구사항명세서 NFR-07(인식 텍스트만 로그)·NFR-08(음성 데이터 저장 안 함) 확정 반영
+  * **관련 요구사항**: NFR-07, NFR-08
 
 ### 5.2 기능 수정 이력
 
@@ -299,4 +304,5 @@ dotnet run --project tools/WavGenerator -- --only greeting.wav
 * **"EasyOrder가 이미 실행 중입니다"**: 실행 중인 키오스크 창을 `Alt+F4`로 닫은 뒤 다시 실행
 * **"내장 웹서버를 시작하지 못했습니다"**: 다른 프로그램이 포트 6703을 사용 중. `Get-Process EasyOrder, cloudflared | Stop-Process -Force` 후 다시 실행
 * **QR 자리에 "cloudflared를 찾을 수 없습니다"**: cloudflared 설치 후 PowerShell을 다시 열고 실행
+* **음성 인식 내용 확인(디버깅)**: 실행 폴더 `src/EasyOrder/bin/Debug/net10.0-windows/logs/recognized-YYYYMMDD.log`에 세션별 인식 텍스트가 기록됨
 * **휴대폰에서 소리가 안 남**: "음성주문활성화"를 눌렀는지, 휴대폰 미디어 볼륨·블루투스 연결 확인
