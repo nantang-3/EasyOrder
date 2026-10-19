@@ -1,6 +1,7 @@
 ﻿using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
+using System.Windows.Media;
 using EasyOrder.Models;
 using EasyOrder.Services;
 
@@ -67,16 +68,54 @@ public partial class MainWindow : Window
         QrPlaceholderText.Visibility = Visibility.Visible;
     }
 
+    private static Visibility VisibleIf(bool condition) => condition ? Visibility.Visible : Visibility.Collapsed;
+
     private void ShowScreen(KioskScreen screen)
     {
         CurrentScreen = screen;
-        QrScreen.Visibility = screen == KioskScreen.Qr ? Visibility.Visible : Visibility.Collapsed;
-        StartScreen.Visibility = screen == KioskScreen.Start ? Visibility.Visible : Visibility.Collapsed;
-        DineSelectScreen.Visibility = screen == KioskScreen.DineSelect ? Visibility.Visible : Visibility.Collapsed;
-        MenuScreen.Visibility = screen == KioskScreen.Menu ? Visibility.Visible : Visibility.Collapsed;
+        QrScreen.Visibility = VisibleIf(screen == KioskScreen.Qr);
+        StartScreen.Visibility = VisibleIf(screen == KioskScreen.Start);
+        SessionLayout.Visibility = VisibleIf(screen is KioskScreen.DineSelect or KioskScreen.Menu);
+        DineSelectContent.Visibility = VisibleIf(screen == KioskScreen.DineSelect);
+        MenuContent.Visibility = VisibleIf(screen == KioskScreen.Menu);
 
-        var inSession = screen is KioskScreen.DineSelect or KioskScreen.Menu;
-        HomeButton.Visibility = inSession ? Visibility.Visible : Visibility.Collapsed;
+        UpdateHeader();
+        RecognizedText.Text = "말씀하시면 여기에 표시돼요";
+        UpdateVoiceBar();
+    }
+
+    /// <summary>머리글의 식사 방식 표시와 단계 표시를 갱신한다 (화면 설계서)</summary>
+    private void UpdateHeader()
+    {
+        DineBadge.Visibility = VisibleIf(CurrentDineMode is not null);
+        DineBadgeText.Text = CurrentDineMode == DineMode.Takeout ? "포장" : "매장";
+
+        var dineStep = CurrentScreen == KioskScreen.DineSelect;
+        SetStepPill(StepDinePill, StepDineText, dineStep);
+        SetStepPill(StepMenuPill, StepMenuText, !dineStep);
+    }
+
+    private void SetStepPill(Border pill, TextBlock text, bool active)
+    {
+        pill.Background = active ? (Brush)FindResource("PrimaryBrush") : (Brush)FindResource("LightGrayBrush");
+        text.Foreground = active ? Brushes.White : (Brush)FindResource("SubTextBrush");
+        text.FontWeight = active ? FontWeights.Bold : FontWeights.Normal;
+    }
+
+    /// <summary>화면 아래 음성 안내 칸: 음성 세션에서만 표시 (FR-01, FR-05, FR-08)</summary>
+    private void UpdateVoiceBar()
+    {
+        VoiceBar.Visibility = VisibleIf(IsVoiceSession && CurrentScreen is (KioskScreen.DineSelect or KioskScreen.Menu));
+        if (CurrentScreen == KioskScreen.DineSelect)
+        {
+            VoiceBarTitle.Text = "듣고 있어요";
+            VoiceBarSubtitle.Text = "‘포장’ 또는 ‘매장’이라고 말씀해 주세요";
+        }
+        else
+        {
+            VoiceBarTitle.Text = "무엇을 주문하시겠습니까?";
+            VoiceBarSubtitle.Text = "메뉴와 수량을 말씀해 주세요";
+        }
     }
 
     /// <summary>세션을 초기화하고 QR 화면(초기 화면)으로 돌아간다.</summary>
@@ -85,7 +124,6 @@ public partial class MainWindow : Window
         CurrentDineMode = null;
         IsVoiceSession = false;
         _voiceFailCount = 0;
-        OrderList.Items.Clear();
         CategoryList.SelectedIndex = _menu.Categories.Count > 0 ? 0 : -1;
         HomeConfirmOverlay.Visibility = Visibility.Collapsed;
         ShowScreen(KioskScreen.Qr);
@@ -159,6 +197,9 @@ public partial class MainWindow : Window
             return;
         }
 
+        // 인식된 말 표시 (FR-08)
+        RecognizedText.Text = string.IsNullOrWhiteSpace(text) ? "(인식된 말 없음)" : $"“{text}”";
+
         switch (CurrentScreen)
         {
             case KioskScreen.DineSelect:
@@ -191,6 +232,7 @@ public partial class MainWindow : Window
         }
 
         IsVoiceSession = false;
+        UpdateVoiceBar();
         _ = StopVoiceInputAsync();
     }
 
@@ -203,7 +245,10 @@ public partial class MainWindow : Window
     // 대분류 선택 → 가운데에 소속 메뉴 표시 (FR-12)
     private void CategoryList_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        MenuList.ItemsSource = (CategoryList.SelectedItem as MenuCategory)?.Menus;
+        var category = CategoryList.SelectedItem as MenuCategory;
+        MenuGrid.ItemsSource = category?.Menus;
+        CategoryTitle.Text = category?.Name ?? "";
+        CategoryCount.Text = category is null ? "" : $"{category.Menus.Count}개 메뉴";
     }
 
     // 시작페이지로 → 확인 알림 (FR-11)
