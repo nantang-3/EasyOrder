@@ -293,6 +293,20 @@ public partial class MainWindow : Window
     {
         var result = _orderParser.Parse(text);
 
+        // "주문완료" → 주문 완료 화면 (FR-19). 담긴 메뉴가 없으면 인식 실패로 처리
+        if (result.IsComplete)
+        {
+            if (_orderItems.Count == 0)
+            {
+                OnVoiceRecognitionFailed();
+                return;
+            }
+
+            _voiceFailCount = 0;
+            ShowCompleteScreen();
+            return;
+        }
+
         if (result.IsCancel)
         {
             var removed = _lastVoiceBatchId is { } batchId
@@ -735,6 +749,11 @@ public partial class MainWindow : Window
             return;
         }
 
+        ShowCompleteScreen();
+    }
+
+    private void ShowCompleteScreen()
+    {
         _completeRemainingSeconds = CompleteScreenSeconds;
         UpdateCompleteCountdown();
         CompleteScreen.Visibility = Visibility.Visible;
