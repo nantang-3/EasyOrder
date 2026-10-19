@@ -81,7 +81,9 @@
         {
           "id": "americano",
           "name": "아메리카노",
-          "aliases": []
+          "aliases": [
+            "아메"
+          ]
         },
         {
           "id": "espresso",
@@ -128,12 +130,16 @@
         {
           "id": "green-tea-latte",
           "name": "그린티라떼",
-          "aliases": []
+          "aliases": [
+            "녹차라떼"
+          ]
         },
         {
           "id": "black-tea-latte",
           "name": "블랙티라떼",
-          "aliases": []
+          "aliases": [
+            "홍차라떼"
+          ]
         },
         {
           "id": "grain-latte",
@@ -228,7 +234,9 @@
         {
           "id": "green-tea",
           "name": "그린티",
-          "aliases": []
+          "aliases": [
+            "녹차"
+          ]
         },
         {
           "id": "herb-tea",

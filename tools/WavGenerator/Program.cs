@@ -14,6 +14,7 @@ const string VoiceName = "ko-KR-SunHiNeural";
     ("ask-order.wav", "무엇을 주문하시겠습니까?"),                                  // FR-05
     ("retry.wav", "천천히 말해주세요."),                                            // FR-09
     ("touch-guide.wav", "음성 인식이 어렵습니다. 화면을 터치해서 주문해 주세요."),  // FR-09 (3회 실패)
+    ("cancel.wav", "취소되었습니다. 다시 주문해주세요"),                            // FR-17 (취소)
 ];
 
 string? only = null;
