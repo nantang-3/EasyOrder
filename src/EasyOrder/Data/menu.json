@@ -13,8 +13,8 @@
       "id": "size",
       "name": "사이즈",
       "choices": [
-        "Large",
-        "Normal"
+        "Normal",
+        "Large"
       ]
     },
     {
@@ -116,6 +116,7 @@
       "optionGroups": [
         "temp",
         "size",
+        "shot",
         "milk"
       ],
       "menus": [
