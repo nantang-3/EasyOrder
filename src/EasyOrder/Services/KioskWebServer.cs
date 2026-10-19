@@ -5,6 +5,8 @@ using EasyOrder.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 
 namespace EasyOrder.Services;
@@ -28,6 +30,9 @@ public sealed class KioskWebServer : IAsyncDisposable
     private WebApplication? _app;
     private WebSocket? _activeClient;
 
+    /// <summary>앱 종료 시 열린 WebSocket 수신을 즉시 끊기 위한 신호</summary>
+    private readonly CancellationTokenSource _shutdown = new();
+
     /// <summary>휴대폰 메시지 수신 (백그라운드 스레드에서 발생)</summary>
     public event Action<PhoneMessage>? MessageReceived;
 
@@ -44,6 +49,9 @@ public sealed class KioskWebServer : IAsyncDisposable
         });
         builder.WebHost.UseUrls(LocalUrl);
         builder.Logging.ClearProviders();
+
+        // 콘솔 앱용 기본 수명 관리(종료 신호 대기)를 쓰지 않는다. 앱 종료는 WPF가 관리한다
+        builder.Services.AddSingleton<IHostLifetime, EmbeddedHostLifetime>();
 
         var app = builder.Build();
         app.UseWebSockets();
@@ -93,6 +101,7 @@ public sealed class KioskWebServer : IAsyncDisposable
 
         using var ws = await context.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
 
+        using var receiveCancel = CancellationTokenSource.CreateLinkedTokenSource(context.RequestAborted, _shutdown.Token);
         var buffer = new byte[4096];
         try
         {
@@ -102,7 +111,7 @@ public sealed class KioskWebServer : IAsyncDisposable
                 WebSocketReceiveResult result;
                 do
                 {
-                    result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), context.RequestAborted).ConfigureAwait(false);
+                    result = await ws.ReceiveAsync(new ArraySegment<byte>(buffer), receiveCancel.Token).ConfigureAwait(false);
                     if (result.MessageType == WebSocketMessageType.Close)
                     {
                         break;
@@ -156,13 +165,31 @@ public sealed class KioskWebServer : IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        // 휴대폰 연결을 먼저 끊고, 서버 종료는 최대 3초만 기다린다 (연결이 남아 앱이 안 꺼지는 문제 방지)
+        _shutdown.Cancel();
         if (_app is not null)
         {
-            await _app.StopAsync().ConfigureAwait(false);
+            using var stopTimeout = new CancellationTokenSource(TimeSpan.FromSeconds(3));
+            try
+            {
+                await _app.StopAsync(stopTimeout.Token).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+            }
+
             await _app.DisposeAsync().ConfigureAwait(false);
             _app = null;
         }
 
         _sendLock.Dispose();
     }
+}
+
+/// <summary>WPF 앱 안에서 쓰는 웹서버용 수명 관리: 프로세스 종료 이벤트를 붙잡지 않는다</summary>
+internal sealed class EmbeddedHostLifetime : IHostLifetime
+{
+    public Task WaitForStartAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }
