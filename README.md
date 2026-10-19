@@ -213,3 +213,7 @@ EasyOrder/
   * **수정 대상 기능**: .gitignore
   * **수정 방식 (How)**: 루트의 "메뉴 사진"(원본 사진) 폴더와 "Claude outputs" 폴더를 제외 규칙에 추가
   * **수정 사유 (Why)**: 저장소에는 400×400으로 줄인 사진만 두고, 원본(약 40MB)과 작업 보조 폴더가 실수로 커밋되지 않게 하기 위함
+* **2026-10-19 앱 시작 오류 안내·중복 실행 방지**
+  * **수정 대상 기능**: src/EasyOrder/App.xaml, src/EasyOrder/App.xaml.cs (앱 시작·종료 처리)
+  * **수정 방식 (How)**: App.xaml의 StartupUri를 없애고 OnStartup에서 MainWindow를 직접 생성. 이름 있는 Mutex(Local\EasyOrderKiosk)로 이미 실행 중이면 "EasyOrder가 이미 실행 중입니다" 알림 후 종료. 처리되지 않은 오류(Dispatcher·AppDomain)와 화면 생성 실패 시 오류 내용을 알림으로 표시. 웹서버 시작 실패 알림에 포트 사용 중 가능성과 터치 주문만 가능함을 안내
+  * **수정 사유 (Why)**: 이전 실행이 남아 포트 6703을 잡고 있거나 시작 중 오류가 나면 앱이 아무 메시지 없이 꺼져 원인을 알 수 없었음(10/19 대체 음성 테스트 중 발생)
