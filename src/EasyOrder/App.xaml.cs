@@ -74,8 +74,18 @@ public partial class App : Application
 
     protected override void OnExit(ExitEventArgs e)
     {
-        Tunnel.Dispose();
-        WebServer.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        // cloudflared·웹서버 정리는 최대 3초만 기다린다
+        try
+        {
+            Task.Run(async () =>
+            {
+                Tunnel.Dispose();
+                await WebServer.DisposeAsync();
+            }).Wait(TimeSpan.FromSeconds(3));
+        }
+        catch (AggregateException)
+        {
+        }
         if (_ownsSingleInstance)
         {
             _singleInstance?.ReleaseMutex();
@@ -84,5 +94,8 @@ public partial class App : Application
         _singleInstance?.Dispose();
 
         base.OnExit(e);
+
+        // 남은 백그라운드 작업이 있어도 프로세스를 확실히 끝낸다 (창을 닫았는데 프로그램이 남는 문제 방지)
+        Environment.Exit(e.ApplicationExitCode);
     }
 }
