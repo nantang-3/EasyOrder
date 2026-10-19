@@ -12,6 +12,9 @@ public sealed class OrderParseResult
     /// <summary>"취소"라고 말했는지 (FR-17)</summary>
     public bool IsCancel { get; init; }
 
+    /// <summary>"주문완료"라고 말했는지 (FR-19)</summary>
+    public bool IsComplete { get; init; }
+
     public IReadOnlyList<ParsedOrderLine> Lines { get; init; } = [];
 }
 
@@ -19,6 +22,7 @@ public sealed class OrderParseResult
 /// 인식된 문장에서 메뉴와 수량을 분석한다 (FR-07).
 /// - 띄어쓰기·문장부호 무시, 표기 차이(라테→라떼, 마키아토→마끼아또, 쥬스→주스) 보정
 /// - 메뉴명과 menu.json의 별칭(aliases)을 긴 것부터 찾아 여러 메뉴를 구분 (복수 메뉴 허용)
+/// - "주문완료"(띄어쓰기 무시)는 주문 완료, "취소"는 직전 음성 주문 취소로 판별
 /// - 각 메뉴 바로 뒤의 수량(숫자 또는 한/두/세…, 하나/둘/셋…)을 읽고, 없으면 1잔, 최대 999
 /// </summary>
 public sealed partial class OrderParser
@@ -77,6 +81,11 @@ public sealed partial class OrderParser
         if (normalized.Length == 0)
         {
             return new OrderParseResult();
+        }
+
+        if (normalized.Contains("주문완료"))
+        {
+            return new OrderParseResult { IsComplete = true };
         }
 
         if (normalized.Contains("취소"))
