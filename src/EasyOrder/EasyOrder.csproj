@@ -15,6 +15,7 @@
   <ItemGroup>
     <None Update="Data\menu.json" CopyToOutputDirectory="PreserveNewest" />
     <None Update="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="Images\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
   <ItemGroup>

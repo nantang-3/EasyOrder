@@ -496,8 +496,10 @@ public partial class MainWindow : Window
 
         PopupCategoryText.Text = category.Name;
         PopupMenuName.Text = menu.Name;
-        PopupMenuImage.Source = null;
-        PopupImagePlaceholder.Visibility = Visibility.Visible;
+        // 메뉴 사진: Images/Menu/{메뉴 id}.png, 없으면 "메뉴 사진" 자리표시 (FR-15)
+        var photo = MenuPhotos.Load(menu.Id);
+        PopupMenuImage.Fill = photo is null ? null : new ImageBrush(photo) { Stretch = Stretch.UniformToFill };
+        PopupImagePlaceholder.Visibility = photo is null ? Visibility.Visible : Visibility.Collapsed;
         PopupQuantityButton.Content = "1";
 
         OptionGroupsPanel.Children.Clear();
