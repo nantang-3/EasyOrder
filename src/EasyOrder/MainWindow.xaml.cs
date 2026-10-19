@@ -20,7 +20,7 @@ namespace EasyOrder;
 public partial class MainWindow : Window
 {
     private const int MaxVoiceFailures = 3;
-    private static readonly TimeSpan CompleteScreenDuration = TimeSpan.FromSeconds(30);
+    private const int CompleteScreenSeconds = 30;
 
     /// <summary>담기 전에 반드시 골라야 하는 옵션 그룹 (온도·사이즈, FR-15)</summary>
     private static readonly string[] RequiredOptionGroups = ["temp", "size"];
@@ -43,7 +43,8 @@ public partial class MainWindow : Window
     private Action? _confirmAction;
     private Action<int>? _keypadCallback;
     private string _keypadInput = "";
-    private readonly DispatcherTimer _completeTimer = new() { Interval = CompleteScreenDuration };
+    private readonly DispatcherTimer _completeTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+    private int _completeRemainingSeconds;
 
     /// <summary>현재 화면 단계</summary>
     public KioskScreen CurrentScreen { get; private set; }
@@ -64,7 +65,7 @@ public partial class MainWindow : Window
         OrderItemsList.ItemsSource = _orderItems;
         _orderItems.CollectionChanged += OnOrderItemsChanged;
         BuildKeypad();
-        _completeTimer.Tick += (_, _) => ResetSession();
+        _completeTimer.Tick += CompleteTimer_Tick;
 
         ResetSession();
 
@@ -586,9 +587,29 @@ public partial class MainWindow : Window
             return;
         }
 
+        _completeRemainingSeconds = CompleteScreenSeconds;
+        UpdateCompleteCountdown();
         CompleteScreen.Visibility = Visibility.Visible;
         _completeTimer.Stop();
         _completeTimer.Start();
+    }
+
+    // 남은 초를 1초마다 줄여 표시, 0초가 되면 QR 화면으로 (FR-19)
+    private void CompleteTimer_Tick(object? sender, EventArgs e)
+    {
+        _completeRemainingSeconds--;
+        if (_completeRemainingSeconds <= 0)
+        {
+            ResetSession();
+            return;
+        }
+
+        UpdateCompleteCountdown();
+    }
+
+    private void UpdateCompleteCountdown()
+    {
+        CompleteCountdownText.Text = $"{_completeRemainingSeconds}초 후 처음 화면으로 돌아갑니다";
     }
 
     private void CompleteHomeButton_Click(object sender, RoutedEventArgs e) => ResetSession();
