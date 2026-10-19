@@ -65,6 +65,9 @@ public partial class MainWindow : Window
     /// <summary>휴대폰 "음성주문활성화"로 시작한 음성 주문 세션인지 여부 (FR-14)</summary>
     public bool IsVoiceSession { get; private set; }
 
+    /// <summary>음성 세션 식별자 (디버깅 로그용, NFR-07)</summary>
+    private string _sessionId = "";
+
     public MainWindow()
     {
         InitializeComponent();
@@ -250,6 +253,7 @@ public partial class MainWindow : Window
 
         CurrentDineMode = null;
         IsVoiceSession = true;
+        _sessionId = SessionLog.NewSessionId();
         _voiceFailCount = 0;
         ConfirmOverlay.Visibility = Visibility.Collapsed;
         ShowScreen(KioskScreen.DineSelect);
@@ -263,6 +267,9 @@ public partial class MainWindow : Window
         {
             return;
         }
+
+        // 디버깅용 세션별 인식 텍스트 기록 (NFR-07)
+        SessionLog.AppendRecognized(_sessionId, text);
 
         // 인식된 말 표시 (FR-08)
         RecognizedText.Text = string.IsNullOrWhiteSpace(text) ? "(인식된 말 없음)" : $"“{text}”";
