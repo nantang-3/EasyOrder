@@ -7,6 +7,7 @@
 - [4. 프로젝트 진행상황](#4-프로젝트-진행상황)
 - [5. 기능 개발 및 수정 이력](#5-기능-개발-및-수정-이력)
 - [6. 테스트 결과](#6-테스트-결과)
+- [7. 실행 방법](#7-실행-방법)
 
 ---
 
@@ -224,6 +225,14 @@ EasyOrder/
   * **수정 대상 기능**: README.md (목차, 기술 스택, 6장 신설), docs/수행계획서.md (산출물)
   * **수정 방식 (How)**: 목차에 6. 테스트 결과 추가, 6장에 통합 테스트 17개 항목과 결과(모두 통과) 기록, 기술 스택 음성 항목에 Windows 내장 음성 대체 명시, 수행계획서 산출물의 테스트 결과 기록 위치를 README 6장으로 확정
   * **수정 사유 (Why)**: 통합 테스트 결과 기록 위치(확인 필요)를 README로 결정
+* **2026-10-19 요구사항명세서 비기능 요구사항 결정 반영**
+  * **수정 대상 기능**: docs/요구사항명세서.md (NFR-01~NFR-04, NFR-07, NFR-08, 확인 필요 목록), docs/수행계획서.md (키오스크 OS)
+  * **수정 방식 (How)**: 응답 시간 5초 이내·인식률 90% 이상을 확정 값으로, 다국어 지원은 해당 없음(추후 확장)으로 기재. Windows 세부 버전은 확인 필요 (Windows 11 검토 중), 로그·음성 데이터 저장은 확인 필요로 두고 현재 구현(저장하지 않음)을 함께 기재
+  * **수정 사유 (Why)**: 남아 있던 비기능 요구사항 확인 필요 항목 결정
+* **2026-10-19 README 실행 방법 장 추가**
+  * **수정 대상 기능**: README.md (목차, 7장 신설)
+  * **수정 방식 (How)**: 준비 사항(.NET SDK, cloudflared, Azure 환경 변수, 한국어 음성), 실행·종료 방법, 휴대폰 접속, 안내 음성 다시 만들기, 문제 해결을 7장으로 정리
+  * **수정 사유 (Why)**: 다른 사람이 저장소를 받아 바로 실행해 볼 수 있도록 하기 위함
 
 ## 6. 테스트 결과
 
@@ -251,3 +260,43 @@ EasyOrder/
 | T-17 | 예외 | 앱 두 번 실행 | "이미 실행 중" 알림 | 통과 |
 
 * **결과 요약**: 17개 항목 모두 통과
+
+## 7. 실행 방법
+
+### 7.1 준비 사항
+* **PC**: Windows (키오스크 세부 버전은 확인 필요, Windows 11 검토 중), 인터넷 연결
+* **.NET SDK 10.0.401**
+* **cloudflared**: PowerShell에서 `winget install --id Cloudflare.cloudflared` (설치 후 PowerShell 다시 열기)
+* **Azure Speech 키**: Azure Portal에서 음성 서비스(Speech, Free F0) 리소스를 만들고 **키 및 엔드포인트**의 키 1·지역을 사용자 환경 변수로 등록 (키는 코드·파일에 쓰지 않음)
+  ```powershell
+  setx AZURE_SPEECH_KEY "키1"
+  setx AZURE_SPEECH_REGION "koreacentral"
+  ```
+* **(선택) Windows 한국어 음성**: 설정 → 시간 및 언어 → 음성에서 한국어 음성 추가 (Azure 실패 시 확인 멘트 대체 음성)
+* **휴대폰**: Android Chrome (Galaxy S26 Ultra에서 확인)
+
+### 7.2 실행
+```powershell
+git clone https://github.com/nantang-3/EasyOrder.git
+cd EasyOrder
+dotnet build
+dotnet run --project src/EasyOrder
+```
+* 키오스크 화면이 전체 화면으로 뜨고, 5~10초 뒤 QR 코드가 표시됩니다.
+* **종료**: `Alt+F4` (cloudflared도 함께 종료됨)
+
+### 7.3 사용
+* **터치 주문**: QR 화면 터치 → 시작 화면 터치 → 포장/매장 선택 → 메뉴 카드 터치 → 옵션 선택 → 주문 목록에 담기 → 주문 완료
+* **음성 주문**: 휴대폰 카메라로 QR 촬영 → Chrome에서 열기 → "음성주문활성화" → "대답하기"를 눌러 포장/매장 말하기 → "주문하기"를 눌러 메뉴·수량 말하기 ("취소", "주문완료"도 가능) → 버튼을 한 번 더 누르면 녹음 종료
+
+### 7.4 안내 음성 다시 만들기
+```powershell
+dotnet run --project tools/WavGenerator -- --only greeting.wav
+```
+* 파일: greeting.wav, ask-order.wav, retry.wav, touch-guide.wav, cancel.wav (`--only` 없이 실행하면 5종 모두 다시 생성)
+
+### 7.5 문제 해결
+* **"EasyOrder가 이미 실행 중입니다"**: 실행 중인 키오스크 창을 `Alt+F4`로 닫은 뒤 다시 실행
+* **"내장 웹서버를 시작하지 못했습니다"**: 다른 프로그램이 포트 6703을 사용 중. `Get-Process EasyOrder, cloudflared | Stop-Process -Force` 후 다시 실행
+* **QR 자리에 "cloudflared를 찾을 수 없습니다"**: cloudflared 설치 후 PowerShell을 다시 열고 실행
+* **휴대폰에서 소리가 안 남**: "음성주문활성화"를 눌렀는지, 휴대폰 미디어 볼륨·블루투스 연결 확인
