@@ -431,3 +431,7 @@ FodyWeavers.xsd
 .env
 *.local.json
 secrets.json
+
+# EasyOrder local folders (원본 메뉴 사진, 작업 보조)
+/메뉴 사진/
+/Claude outputs/
