@@ -21,6 +21,7 @@ public partial class MainWindow : Window
 {
     private const int MaxVoiceFailures = 3;
     private const int CompleteScreenSeconds = 30;
+    private static readonly TimeSpan IdleTimeout = TimeSpan.FromSeconds(60);
 
     /// <summary>담기 전에 반드시 골라야 하는 옵션 그룹 (온도·사이즈, FR-15)</summary>
     private static readonly string[] RequiredOptionGroups = ["temp", "size"];
@@ -51,6 +52,10 @@ public partial class MainWindow : Window
     private readonly DispatcherTimer _completeTimer = new() { Interval = TimeSpan.FromSeconds(1) };
     private int _completeRemainingSeconds;
 
+    // 무응답 타임아웃 (FR-10): 세션 중 마지막 터치·말 이후 60초
+    private readonly DispatcherTimer _idleTimer = new() { Interval = TimeSpan.FromSeconds(1) };
+    private DateTime _lastActivityUtc = DateTime.UtcNow;
+
     /// <summary>현재 화면 단계</summary>
     public KioskScreen CurrentScreen { get; private set; }
 
@@ -72,6 +77,13 @@ public partial class MainWindow : Window
         _orderItems.CollectionChanged += OnOrderItemsChanged;
         BuildKeypad();
         _completeTimer.Tick += CompleteTimer_Tick;
+
+        // 화면 어디든 터치(마우스)·키 입력을 활동으로 기록
+        PreviewMouseDown += (_, _) => MarkActivity();
+        PreviewTouchDown += (_, _) => MarkActivity();
+        PreviewKeyDown += (_, _) => MarkActivity();
+        _idleTimer.Tick += IdleTimer_Tick;
+        _idleTimer.Start();
 
         ResetSession();
 
@@ -111,6 +123,7 @@ public partial class MainWindow : Window
     private void ShowScreen(KioskScreen screen)
     {
         CurrentScreen = screen;
+        MarkActivity();
         QrScreen.Visibility = VisibleIf(screen == KioskScreen.Qr);
         StartScreen.Visibility = VisibleIf(screen == KioskScreen.Start);
         SessionLayout.Visibility = VisibleIf(screen is KioskScreen.DineSelect or KioskScreen.Menu);
@@ -212,6 +225,9 @@ public partial class MainWindow : Window
 
     private void HandlePhoneMessage(PhoneMessage message)
     {
+        // 휴대폰에서 온 말(인식 텍스트)·활성화도 활동으로 기록 (FR-10)
+        MarkActivity();
+
         switch (message.Type)
         {
             case "voice-activated":
@@ -384,6 +400,40 @@ public partial class MainWindow : Window
         MenuGrid.ItemsSource = category?.Menus;
         CategoryTitle.Text = category?.Name ?? "";
         CategoryCount.Text = category is null ? "" : $"{category.Menus.Count}개 메뉴";
+    }
+
+    // ── 무응답 타임아웃 (FR-10) ──
+    private void MarkActivity()
+    {
+        _lastActivityUtc = DateTime.UtcNow;
+        UpdateIdleCountdown();
+    }
+
+    /// <summary>머리글 가운데에 무응답 타임아웃 남은 시간 표시</summary>
+    private void UpdateIdleCountdown()
+    {
+        var remaining = IdleTimeout - (DateTime.UtcNow - _lastActivityUtc);
+        var seconds = Math.Max(0, (int)Math.Ceiling(remaining.TotalSeconds));
+        IdleCountdownText.Text = $"남은 시간 {seconds}초";
+    }
+
+    // 포장/매장 선택·메뉴 화면에서 60초간 터치와 말이 모두 없으면 세션을 초기화하고 QR 화면으로
+    // (주문 완료 화면은 자체 30초 타이머를 따른다)
+    private void IdleTimer_Tick(object? sender, EventArgs e)
+    {
+        var inSession = CurrentScreen is KioskScreen.DineSelect or KioskScreen.Menu;
+        if (!inSession || CompleteScreen.Visibility == Visibility.Visible)
+        {
+            return;
+        }
+
+        if (DateTime.UtcNow - _lastActivityUtc >= IdleTimeout)
+        {
+            ResetSession();
+            return;
+        }
+
+        UpdateIdleCountdown();
     }
 
     // ── 확인 알림 (FR-11, FR-18) ──
