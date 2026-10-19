@@ -5,103 +5,416 @@
         Background="Black"
         WindowStyle="None"
         WindowState="Maximized"
-        ResizeMode="NoResize">
+        ResizeMode="NoResize"
+        FontFamily="Malgun Gothic">
     <Window.Resources>
-        <Style x:Key="KioskButton" TargetType="Button">
-            <Setter Property="FontSize" Value="56" />
-            <Setter Property="FontWeight" Value="Bold" />
-            <Setter Property="Padding" Value="24" />
-            <Setter Property="Background" Value="#FFF2F2F2" />
-            <Setter Property="BorderBrush" Value="#FF333333" />
+        <!-- 색상 (화면 설계서 기준) -->
+        <SolidColorBrush x:Key="PrimaryBrush" Color="#1F6B4F" />
+        <SolidColorBrush x:Key="DarkGreenBrush" Color="#17523C" />
+        <SolidColorBrush x:Key="TintBrush" Color="#E2EFE8" />
+        <SolidColorBrush x:Key="TextBrush" Color="#1D1F1E" />
+        <SolidColorBrush x:Key="SubTextBrush" Color="#6B706D" />
+        <SolidColorBrush x:Key="LightGrayBrush" Color="#F1F3F2" />
+        <SolidColorBrush x:Key="BorderBrush" Color="#D9DCDA" />
+        <SolidColorBrush x:Key="DividerBrush" Color="#E6E8E7" />
+        <SolidColorBrush x:Key="VoiceBarBrush" Color="#1E2020" />
+
+        <!-- 아이콘 -->
+        <Geometry x:Key="CupIcon">M 8,22 L 52,22 L 52,40 A 22,22 0 0 1 30,62 A 22,22 0 0 1 8,40 Z M 52,28 A 10,10 0 0 1 52,48 M 2,74 L 58,74</Geometry>
+        <Geometry x:Key="SteamIcon">M 18,14 C 12,8 24,4 18,-2 M 30,14 C 24,8 36,4 30,-2 M 42,14 C 36,8 48,4 42,-2</Geometry>
+        <Geometry x:Key="BagIcon">M 12,26 L 48,26 L 44,72 L 16,72 Z M 21,26 L 21,18 A 9,9 0 0 1 39,18 L 39,26</Geometry>
+        <Geometry x:Key="MicIcon">M 22,4 A 8,8 0 0 1 38,4 L 38,26 A 8,8 0 0 1 22,26 Z M 12,22 A 18,18 0 0 0 48,22 M 30,40 L 30,52</Geometry>
+        <Geometry x:Key="HandIcon">M 20,30 L 20,6 A 5,5 0 0 1 30,6 L 30,26 L 30,20 A 5,5 0 0 1 40,20 L 40,28 L 40,24 A 5,5 0 0 1 50,24 L 50,46 C 50,58 42,66 30,66 L 26,66 C 18,66 13,61 9,54 L 2,42 A 5,5 0 0 1 10,36 L 20,46 Z</Geometry>
+
+        <!-- 카드형 버튼 (포장/매장, 메뉴) -->
+        <Style x:Key="CardButton" TargetType="Button">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
             <Setter Property="BorderThickness" Value="3" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="40">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource TintBrush}" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
-        <Style TargetType="ListBoxItem">
+
+        <!-- 초록 버튼 -->
+        <Style x:Key="PrimaryButton" TargetType="Button">
+            <Setter Property="Background" Value="{StaticResource PrimaryBrush}" />
+            <Setter Property="Foreground" Value="White" />
             <Setter Property="FontSize" Value="40" />
-            <Setter Property="Padding" Value="20,24" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}" CornerRadius="24">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.8" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.35" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 흰 테두리 버튼 -->
+        <Style x:Key="OutlineButton" TargetType="Button">
+            <Setter Property="Background" Value="White" />
+            <Setter Property="BorderBrush" Value="{StaticResource BorderBrush}" />
+            <Setter Property="BorderThickness" Value="3" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="FontSize" Value="32" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bd" Background="{TemplateBinding Background}"
+                                BorderBrush="{TemplateBinding BorderBrush}"
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="24">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource LightGrayBrush}" />
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="Bd" Property="Opacity" Value="0.35" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- 왼쪽 대분류 목록 항목 -->
+        <Style x:Key="CategoryItem" TargetType="ListBoxItem">
+            <Setter Property="Height" Value="128" />
+            <Setter Property="FontSize" Value="34" />
+            <Setter Property="FontWeight" Value="Bold" />
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="Bd" Background="Transparent">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="Bd" Property="Background" Value="{StaticResource PrimaryBrush}" />
+                                <Setter Property="Foreground" Value="White" />
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
         </Style>
     </Window.Resources>
 
     <!-- 1080×1920 세로 기준, 전체 화면에서 비율 유지 확대·축소 (NFR-06) -->
     <Viewbox Stretch="Uniform">
-        <Grid Width="1080" Height="1920" Background="White">
+        <Grid Width="1080" Height="1920" Background="White" ClipToBounds="True">
 
-            <!-- 메뉴 화면 (FR-12) -->
-            <Grid x:Name="MenuScreen" Visibility="Collapsed">
+            <!-- ── 세션 화면 (포장/매장 선택, 메뉴) ── -->
+            <Grid x:Name="SessionLayout" Visibility="Collapsed">
                 <Grid.RowDefinitions>
-                    <RowDefinition Height="160" />
+                    <RowDefinition Height="130" />
                     <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <Grid Grid.Row="1">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="260" />
-                        <ColumnDefinition Width="*" />
-                        <ColumnDefinition Width="360" />
-                    </Grid.ColumnDefinitions>
-                    <ListBox x:Name="CategoryList" Grid.Column="0"
-                             DisplayMemberPath="Name"
-                             SelectionChanged="CategoryList_SelectionChanged" />
-                    <ListBox x:Name="MenuList" Grid.Column="1"
-                             DisplayMemberPath="Name" />
-                    <ListBox x:Name="OrderList" Grid.Column="2" />
+
+                <!-- 머리글: 매장명·식사 방식·단계 -->
+                <Border Grid.Row="0" Background="White" BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,0,0,2">
+                    <Grid Margin="48,0">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="폴리텍점" FontSize="42" FontWeight="Bold" Foreground="{StaticResource TextBrush}" VerticalAlignment="Center" />
+                            <Border x:Name="DineBadge" Background="{StaticResource TintBrush}" CornerRadius="28"
+                                    Padding="22,8" Margin="22,0,0,0" VerticalAlignment="Center" Visibility="Collapsed">
+                                <TextBlock x:Name="DineBadgeText" FontSize="26" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" />
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <Border x:Name="StepDinePill" CornerRadius="30" Padding="26,12">
+                                <TextBlock x:Name="StepDineText" Text="1 식사 방식" FontSize="26" />
+                            </Border>
+                            <Border x:Name="StepMenuPill" CornerRadius="30" Padding="26,12" Margin="14,0,0,0">
+                                <TextBlock x:Name="StepMenuText" Text="2 메뉴 선택" FontSize="26" />
+                            </Border>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+
+                <!-- 포장/매장 선택 (FR-01, FR-15) -->
+                <Grid x:Name="DineSelectContent" Grid.Row="1">
+                    <StackPanel VerticalAlignment="Center" Margin="0,0,0,120">
+                        <TextBlock Text="포장이신가요?&#xA;매장에서 드시나요?" FontSize="76" FontWeight="Bold"
+                                   Foreground="{StaticResource TextBrush}" TextAlignment="Center" LineHeight="100"
+                                   HorizontalAlignment="Center" />
+                        <Grid Margin="64,90,64,0" Height="620">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition />
+                                <ColumnDefinition Width="40" />
+                                <ColumnDefinition />
+                            </Grid.ColumnDefinitions>
+                            <Button Grid.Column="0" Style="{StaticResource CardButton}" Click="DineInButton_Click">
+                                <StackPanel>
+                                    <Grid Width="220" Height="220">
+                                        <Ellipse Fill="{StaticResource LightGrayBrush}" />
+                                        <Path Data="{StaticResource SteamIcon}" Stroke="{StaticResource TextBrush}" StrokeThickness="4"
+                                              Width="48" Height="22" Stretch="Uniform" Margin="0,0,10,92" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                        <Path Data="{StaticResource CupIcon}" Stroke="{StaticResource TextBrush}" StrokeThickness="5"
+                                              Width="92" Height="84" Stretch="Uniform" Margin="0,40,0,0" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                    </Grid>
+                                    <TextBlock Text="매장" FontSize="76" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,40,0,0" />
+                                    <TextBlock Text="여기서 먹고 갈게요" FontSize="32" Foreground="{StaticResource SubTextBrush}" HorizontalAlignment="Center" Margin="0,30,0,0" />
+                                </StackPanel>
+                            </Button>
+                            <Button Grid.Column="2" Style="{StaticResource CardButton}" Click="TakeoutButton_Click">
+                                <StackPanel>
+                                    <Grid Width="220" Height="220">
+                                        <Ellipse Fill="{StaticResource LightGrayBrush}" />
+                                        <Path Data="{StaticResource BagIcon}" Stroke="{StaticResource TextBrush}" StrokeThickness="5"
+                                              Width="80" Height="100" Stretch="Uniform" StrokeLineJoin="Round" />
+                                    </Grid>
+                                    <TextBlock Text="포장" FontSize="76" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,40,0,0" />
+                                    <TextBlock Text="가져갈게요" FontSize="32" Foreground="{StaticResource SubTextBrush}" HorizontalAlignment="Center" Margin="0,30,0,0" />
+                                </StackPanel>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+                    <!-- 시작페이지로: 왼쪽 아래 (FR-11) -->
+                    <Button Content="시작페이지로" Style="{StaticResource OutlineButton}" FontSize="28"
+                            HorizontalAlignment="Left" VerticalAlignment="Bottom" Margin="32" Width="240" Height="96"
+                            Click="HomeButton_Click" />
                 </Grid>
+
+                <!-- 메뉴 화면 (FR-12) -->
+                <Grid x:Name="MenuContent" Grid.Row="1" Visibility="Collapsed">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="200" />
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="372" />
+                    </Grid.ColumnDefinitions>
+
+                    <!-- 대분류 -->
+                    <Grid Grid.Column="0" Background="#F3F4F3">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+                        <ListBox x:Name="CategoryList" Background="Transparent" BorderThickness="0"
+                                 ItemContainerStyle="{StaticResource CategoryItem}" DisplayMemberPath="Name"
+                                 ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                 SelectionChanged="CategoryList_SelectionChanged" />
+                        <!-- 시작페이지로: 왼쪽 아래 (FR-11) -->
+                        <Button Grid.Row="1" Content="시작페이지로" Style="{StaticResource OutlineButton}" FontSize="26"
+                                Margin="14,0,14,24" Height="96" Click="HomeButton_Click" />
+                    </Grid>
+
+                    <!-- 소속 메뉴 -->
+                    <Grid Grid.Column="1">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <StackPanel Orientation="Horizontal" Margin="36,44,36,20">
+                            <TextBlock x:Name="CategoryTitle" FontSize="46" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                            <TextBlock x:Name="CategoryCount" FontSize="26" Foreground="{StaticResource SubTextBrush}" Margin="20,0,0,6" VerticalAlignment="Bottom" />
+                        </StackPanel>
+                        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
+                            <ItemsControl x:Name="MenuGrid" Margin="24,0,24,24">
+                                <ItemsControl.ItemsPanel>
+                                    <ItemsPanelTemplate>
+                                        <UniformGrid Columns="2" VerticalAlignment="Top" />
+                                    </ItemsPanelTemplate>
+                                </ItemsControl.ItemsPanel>
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate>
+                                        <Button Style="{StaticResource CardButton}" Height="300" Margin="12" Tag="{Binding}">
+                                            <StackPanel>
+                                                <Grid Width="140" Height="140">
+                                                    <Ellipse Fill="{StaticResource LightGrayBrush}" />
+                                                    <Path Data="{StaticResource CupIcon}" Stroke="#555B58" StrokeThickness="4"
+                                                          Width="52" Height="44" Stretch="Uniform" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                                                </Grid>
+                                                <TextBlock Text="{Binding Name}" FontSize="30" FontWeight="Bold" HorizontalAlignment="Center"
+                                                           TextWrapping="Wrap" TextAlignment="Center" Margin="8,26,8,0" />
+                                            </StackPanel>
+                                        </Button>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                        </ScrollViewer>
+                    </Grid>
+
+                    <!-- 주문 목록 -->
+                    <Border Grid.Column="2" Background="#FAFAFA" BorderBrush="{StaticResource DividerBrush}" BorderThickness="2,0,0,0">
+                        <Grid Margin="26,40,26,30">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto" />
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="Auto" />
+                            </Grid.RowDefinitions>
+                            <Grid>
+                                <TextBlock Text="주문 목록" FontSize="38" FontWeight="Bold" Foreground="{StaticResource TextBrush}" />
+                                <TextBlock x:Name="OrderCountText" Text="0개 항목" FontSize="24" Foreground="{StaticResource SubTextBrush}"
+                                           HorizontalAlignment="Right" VerticalAlignment="Center" />
+                            </Grid>
+                            <ScrollViewer Grid.Row="1" Margin="0,24,0,0" VerticalScrollBarVisibility="Auto" PanningMode="VerticalOnly">
+                                <ItemsControl x:Name="OrderItemsList" />
+                            </ScrollViewer>
+                            <StackPanel Grid.Row="2">
+                                <Border BorderBrush="{StaticResource DividerBrush}" BorderThickness="0,2,0,0" Padding="0,24,0,24">
+                                    <Grid>
+                                        <TextBlock Text="총 수량" FontSize="28" Foreground="{StaticResource SubTextBrush}" VerticalAlignment="Center" />
+                                        <TextBlock x:Name="TotalQuantityText" Text="0잔" FontSize="46" FontWeight="Bold"
+                                                   Foreground="{StaticResource TextBrush}" HorizontalAlignment="Right" />
+                                    </Grid>
+                                </Border>
+                                <Button x:Name="CompleteOrderButton" Content="주문 완료" Style="{StaticResource PrimaryButton}" Height="100" IsEnabled="False" />
+                                <Button x:Name="ClearOrderButton" Content="전체 삭제" Style="{StaticResource OutlineButton}" Height="72" Margin="0,18,0,0" IsEnabled="False" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                </Grid>
+
+                <!-- 화면 아래 음성 안내·인식된 말 (음성 세션에서만) -->
+                <Border x:Name="VoiceBar" Grid.Row="2" Background="{StaticResource VoiceBarBrush}" Height="210" Visibility="Collapsed">
+                    <Grid Margin="40,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <Grid Width="136" Height="136" VerticalAlignment="Center">
+                            <Ellipse Fill="#1E4A39" />
+                            <Ellipse Fill="{StaticResource PrimaryBrush}" Width="108" Height="108" />
+                            <Path Data="{StaticResource MicIcon}" Stroke="White" StrokeThickness="4" Width="40" Height="52"
+                                  Stretch="Uniform" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                        </Grid>
+                        <StackPanel Grid.Column="1" VerticalAlignment="Center" Margin="30,0,20,0">
+                            <TextBlock x:Name="VoiceBarTitle" FontSize="40" FontWeight="Bold" Foreground="White" TextWrapping="Wrap" />
+                            <TextBlock x:Name="VoiceBarSubtitle" FontSize="26" Foreground="#B9BDBB" Margin="0,12,0,0" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <Border Grid.Column="2" Background="#2D3130" CornerRadius="24" Width="330" Padding="24,20" VerticalAlignment="Center">
+                            <StackPanel>
+                                <TextBlock Text="인식된 말" FontSize="22" Foreground="#9EA3A1" />
+                                <TextBlock x:Name="RecognizedText" FontSize="28" Foreground="White" TextWrapping="Wrap" Margin="0,10,0,0" />
+                            </StackPanel>
+                        </Border>
+                    </Grid>
+                </Border>
             </Grid>
 
-            <!-- 포장/매장 선택 화면 (FR-01, FR-15) -->
-            <Grid x:Name="DineSelectScreen" Visibility="Collapsed">
-                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center">
-                    <Button x:Name="TakeoutButton" Content="포장" Style="{StaticResource KioskButton}"
-                            Width="640" Height="320" Margin="0,0,0,80"
-                            Click="TakeoutButton_Click" />
-                    <Button x:Name="DineInButton" Content="매장" Style="{StaticResource KioskButton}"
-                            Width="640" Height="320"
-                            Click="DineInButton_Click" />
-                </StackPanel>
-            </Grid>
-
-            <!-- 시작페이지로 버튼: 세션 중 왼쪽 위(메뉴 위) (FR-11) -->
-            <Button x:Name="HomeButton" Content="시작페이지로" Style="{StaticResource KioskButton}"
-                    FontSize="40" HorizontalAlignment="Left" VerticalAlignment="Top"
-                    Margin="24" Width="360" Height="112"
-                    Visibility="Collapsed"
-                    Click="HomeButton_Click" />
-
-            <!-- 시작 화면: 화면 아무 곳이나 터치 (FR-01) -->
-            <Grid x:Name="StartScreen" Background="White" Visibility="Collapsed"
+            <!-- ── 시작 화면 (FR-01) ── -->
+            <Grid x:Name="StartScreen" Background="{StaticResource DarkGreenBrush}" Visibility="Collapsed"
                   MouseLeftButtonUp="StartScreen_MouseLeftButtonUp">
-                <TextBlock Text="화면을 터치해 주세요" FontSize="80" FontWeight="Bold"
-                           HorizontalAlignment="Center" VerticalAlignment="Center" />
+                <Canvas>
+                    <Ellipse Width="1180" Height="1180" Canvas.Left="400" Canvas.Top="220" Fill="#1E6A4D" />
+                    <Ellipse Width="740" Height="740" Canvas.Left="-360" Canvas.Top="1020" Fill="#1B5E45" />
+                    <Ellipse Width="244" Height="244" Canvas.Left="140" Canvas.Top="360" Stroke="#5F8E79" StrokeThickness="2" />
+                </Canvas>
+                <StackPanel Margin="80,96,0,0" HorizontalAlignment="Left" VerticalAlignment="Top">
+                    <TextBlock Text="폴리텍점" FontSize="40" FontWeight="Bold" Foreground="White" />
+                    <TextBlock Text="카페 키오스크" FontSize="24" Foreground="#CFE0D7" Margin="0,14,0,0" />
+                </StackPanel>
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,610,0,0">
+                    <Path Data="{StaticResource SteamIcon}" Stroke="#E3EEE8" StrokeThickness="12" Width="150" Height="120"
+                          Stretch="Uniform" Margin="0,0,40,20" StrokeStartLineCap="Round" StrokeEndLineCap="Round" />
+                    <Path Data="{StaticResource CupIcon}" Stroke="#E3EEE8" StrokeThickness="12" Width="340" Height="230"
+                          Stretch="Uniform" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" />
+                    <TextBlock Text="어서 오세요" FontSize="96" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center" Margin="0,120,0,0" />
+                    <TextBlock Text="폴리텍점입니다" FontSize="36" Foreground="#DCE9E2" HorizontalAlignment="Center" Margin="0,40,0,0" />
+                </StackPanel>
+                <Border VerticalAlignment="Bottom" HorizontalAlignment="Center" Margin="0,0,0,96" Width="720" Height="124"
+                        CornerRadius="62" Background="#1AFFFFFF" BorderBrush="#66FFFFFF" BorderThickness="2">
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Path Data="{StaticResource HandIcon}" Stroke="White" StrokeThickness="3" Width="44" Height="52"
+                              Stretch="Uniform" StrokeLineJoin="Round" />
+                        <TextBlock Text="화면을 터치하면 주문을 시작합니다" FontSize="34" FontWeight="Bold" Foreground="White"
+                                   VerticalAlignment="Center" Margin="22,0,0,0" />
+                    </StackPanel>
+                </Border>
             </Grid>
 
-            <!-- QR 화면: 시작 화면 위, 화면 한가운데 (FR-13) -->
-            <Grid x:Name="QrScreen" Background="White"
-                  MouseLeftButtonUp="QrScreen_MouseLeftButtonUp">
-                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
-                    <TextBlock Text="음성주문시 촬영해주세요." FontSize="64" FontWeight="Bold"
-                               HorizontalAlignment="Center" Margin="0,0,0,48" />
-                    <Border Width="640" Height="640" BorderBrush="#FF333333" BorderThickness="3">
+            <!-- ── QR 화면 (FR-13) ── -->
+            <Grid x:Name="QrScreen" Background="White" MouseLeftButtonUp="QrScreen_MouseLeftButtonUp">
+                <TextBlock Text="폴리텍점" FontSize="40" FontWeight="Bold" Foreground="{StaticResource TextBrush}"
+                           HorizontalAlignment="Left" VerticalAlignment="Top" Margin="80,104,0,0" />
+                <TextBlock Text="카페 키오스크" FontSize="26" Foreground="{StaticResource SubTextBrush}"
+                           HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,114,80,0" />
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Top" Margin="0,380,0,0">
+                    <TextBlock Text="음성으로 주문하시려면&#xA;QR을 찍어 주세요" FontSize="70" FontWeight="Bold"
+                               Foreground="{StaticResource TextBrush}" TextAlignment="Center" LineHeight="90" HorizontalAlignment="Center" />
+                    <Border Width="600" Height="600" CornerRadius="36" BorderBrush="{StaticResource TextBrush}" BorderThickness="3"
+                            Background="White" Margin="0,64,0,0">
                         <Grid>
-                            <Image x:Name="QrImage" Stretch="Uniform" Margin="24" />
-                            <TextBlock x:Name="QrPlaceholderText" Text="QR 준비 중" FontSize="40"
-                                       Foreground="#FF888888"
+                            <Image x:Name="QrImage" Stretch="Uniform" Margin="40" />
+                            <TextBlock x:Name="QrPlaceholderText" Text="QR 준비 중" FontSize="36" Foreground="#888888"
                                        HorizontalAlignment="Center" VerticalAlignment="Center" />
                         </Grid>
                     </Border>
+                    <UniformGrid Columns="3" Width="960" Margin="0,56,0,0">
+                        <StackPanel>
+                            <Border Width="66" Height="66" CornerRadius="33" Background="{StaticResource TintBrush}">
+                                <TextBlock Text="1" FontSize="30" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Text="휴대폰 카메라로&#xA;QR 촬영" FontSize="28" FontWeight="Bold" TextAlignment="Center" Margin="0,22,0,0" HorizontalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel>
+                            <Border Width="66" Height="66" CornerRadius="33" Background="{StaticResource TintBrush}">
+                                <TextBlock Text="2" FontSize="30" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Text="Chrome으로&#xA;페이지 열기" FontSize="28" FontWeight="Bold" TextAlignment="Center" Margin="0,22,0,0" HorizontalAlignment="Center" />
+                        </StackPanel>
+                        <StackPanel>
+                            <Border Width="66" Height="66" CornerRadius="33" Background="{StaticResource TintBrush}">
+                                <TextBlock Text="3" FontSize="30" FontWeight="Bold" Foreground="{StaticResource PrimaryBrush}" HorizontalAlignment="Center" VerticalAlignment="Center" />
+                            </Border>
+                            <TextBlock Text="‘음성주문활성화’&#xA;버튼 누르기" FontSize="28" FontWeight="Bold" TextAlignment="Center" Margin="0,22,0,0" HorizontalAlignment="Center" />
+                        </StackPanel>
+                    </UniformGrid>
                 </StackPanel>
+                <Border VerticalAlignment="Bottom" Margin="80,0,80,80" Height="200" CornerRadius="36" Background="{StaticResource PrimaryBrush}">
+                    <Grid Margin="50,0">
+                        <StackPanel VerticalAlignment="Center">
+                            <TextBlock Text="화면을 터치해 주세요" FontSize="46" FontWeight="Bold" Foreground="White" />
+                            <TextBlock Text="음성 없이 터치로도 주문할 수 있어요" FontSize="28" Foreground="#CFE3D8" Margin="0,14,0,0" />
+                        </StackPanel>
+                        <Path Data="{StaticResource HandIcon}" Stroke="White" StrokeThickness="4" Width="80" Height="94"
+                              Stretch="Uniform" HorizontalAlignment="Right" VerticalAlignment="Center" StrokeLineJoin="Round" />
+                    </Grid>
+                </Border>
             </Grid>
 
             <!-- 시작페이지로 확인 알림: 화면 가운데 (FR-11) -->
             <Grid x:Name="HomeConfirmOverlay" Background="#99000000" Visibility="Collapsed">
-                <Border Background="White" Width="880" Padding="56" CornerRadius="16"
+                <Border Background="White" Width="880" Padding="56" CornerRadius="40"
                         HorizontalAlignment="Center" VerticalAlignment="Center">
                     <StackPanel>
-                        <TextBlock Text="처음 화면으로 돌아가시겠습니까?" FontSize="52" FontWeight="Bold"
+                        <TextBlock Text="처음 화면으로 돌아가시겠습니까?" FontSize="50" FontWeight="Bold" Foreground="{StaticResource TextBrush}"
                                    TextWrapping="Wrap" TextAlignment="Center" Margin="0,0,0,56" />
                         <UniformGrid Columns="2">
-                            <Button Content="예" Style="{StaticResource KioskButton}"
-                                    Height="160" Margin="0,0,24,0"
+                            <Button Content="예" Style="{StaticResource PrimaryButton}" Height="140" Margin="0,0,20,0"
                                     Click="HomeConfirmYes_Click" />
-                            <Button Content="아니요" Style="{StaticResource KioskButton}"
-                                    Height="160" Margin="24,0,0,0"
+                            <Button Content="아니요" Style="{StaticResource OutlineButton}" FontSize="40" Height="140" Margin="20,0,0,0"
                                     Click="HomeConfirmNo_Click" />
                         </UniformGrid>
                     </StackPanel>
