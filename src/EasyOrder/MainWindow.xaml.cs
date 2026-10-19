@@ -351,7 +351,7 @@ public partial class MainWindow : Window
         }
 
         var spoken = string.Join(", ", result.Lines.Select(l => $"{l.Menu.Name} {KoreanCount.ToSpoken(l.Quantity)} 잔"));
-        _ = PlayConfirmationAsync($"{spoken} 맞습니까? 아니라면 취소라고 주문하기 버튼을 누르고 말해주세요. 다른메뉴 추가 주문하시면 주문하기버튼을 누르고 주문해주세요.");
+        _ = PlayConfirmationAsync($"{spoken} 맞습니까? 아니라면 취소라고 주문하기 버튼을 누르고 말해주세요. 다른메뉴 추가 주문하시면 주문하기버튼을 누르고 주문해주세요. 주문을 마치시려면 주문하기 버튼을 누르고 주문완료라고 말해주세요.");
     }
 
     /// <summary>음성 주문 옵션 기본값: HOT · Normal · 샷 기본 · 우유 (FR-07)</summary>
