@@ -246,6 +246,10 @@ EasyOrder/
   * **수정 대상 기능**: README.md (7.5 문제 해결)
   * **수정 방식 (How)**: 휴대폰에서 QR 주소가 DNS_PROBE_FINISHED_NXDOMAIN으로 열리지 않을 때 프라이빗 DNS(one.one.one.one) 설정·와이파이 연결·1분 대기 방법을 추가
   * **수정 사유 (Why)**: 앱을 자주 다시 실행해 터널 주소가 바뀌는 동안 휴대폰(KT 모바일 데이터) DNS가 새 주소를 찾지 못하는 현상 발생, 프라이빗 DNS 변경으로 해결 확인
+* **2026-10-20 키오스크 Windows 버전 확정·배포 실행 방법 추가**
+  * **수정 대상 기능**: docs/요구사항명세서.md (NFR-01, 확인 필요 목록 33), docs/수행계획서.md (키오스크 OS), README.md (7.1, 7.6 신설)
+  * **수정 방식 (How)**: 키오스크 PC Windows 버전을 Windows 10으로 확정 기재, README에 dotnet publish(win-x64, self-contained)로 배포 폴더를 만들어 키오스크 PC에서 EasyOrder.exe로 실행하는 방법과 자동 실행 방법 추가
+  * **수정 사유 (Why)**: 키오스크 PC의 winver 확인 결과(Windows 10) 반영, 키오스크 PC에 .NET SDK·소스 없이 실행하기 위함
 
 ## 6. 테스트 결과
 
@@ -278,7 +282,7 @@ EasyOrder/
 ## 7. 실행 방법
 
 ### 7.1 준비 사항
-* **PC**: Windows (키오스크 세부 버전은 확인 필요, Windows 11 검토 중), 인터넷 연결
+* **PC**: Windows 10 이상 (키오스크 PC: Windows 10), 인터넷 연결
 * **.NET SDK 10.0.401**
 * **cloudflared**: PowerShell에서 `winget install --id Cloudflare.cloudflared` (설치 후 PowerShell 다시 열기)
 * **Azure Speech 키**: Azure Portal에서 음성 서비스(Speech, Free F0) 리소스를 만들고 **키 및 엔드포인트**의 키 1·지역을 사용자 환경 변수로 등록 (키는 코드·파일에 쓰지 않음)
@@ -316,3 +320,15 @@ dotnet run --project tools/WavGenerator -- --only greeting.wav
 * **음성 인식 내용 확인(디버깅)**: 실행 폴더 `src/EasyOrder/bin/Debug/net10.0-windows/logs/recognized-YYYYMMDD.log`에 세션별 인식 텍스트가 기록됨
 * **휴대폰에서 QR 주소가 "사이트에 연결할 수 없음(DNS_PROBE_FINISHED_NXDOMAIN)"**: 새 터널 주소를 너무 빨리 조회해 통신사 DNS가 "없는 주소"를 기억한 경우. 휴대폰 설정 → 연결 → 기타 연결 설정 → 프라이빗 DNS → 호스트 이름 `one.one.one.one`으로 바꾸거나 와이파이에 연결한 뒤, QR 표시 후 1분쯤 기다렸다가 다시 접속
 * **휴대폰에서 소리가 안 남**: "음성주문활성화"를 눌렀는지, 휴대폰 미디어 볼륨·블루투스 연결 확인
+
+### 7.6 키오스크 PC에서 실행 (배포)
+키오스크 PC에는 .NET SDK와 소스 코드가 필요 없도록, 개발 PC에서 실행 파일 폴더를 만들어 복사한다.
+
+1. **개발 PC**에서 배포 폴더 만들기 (저장소 밖 `EasyOrder-publish` 폴더에 생성)
+   ```powershell
+   dotnet publish src/EasyOrder/EasyOrder.csproj -c Release -r win-x64 --self-contained true -o ..\EasyOrder-publish
+   ```
+2. `EasyOrder-publish` 폴더를 통째로 키오스크 PC에 복사 (USB 등)
+3. **키오스크 PC** 준비: cloudflared 설치, Azure 환경 변수 등록(7.1과 동일), (선택) 한국어 음성 추가
+4. 키오스크 PC에서 `EasyOrder-publish\EasyOrder.exe` 실행 (전체 화면으로 시작, 종료는 `Alt+F4`)
+5. (선택) Windows 시작 시 자동 실행: `Win+R` → `shell:startup` 입력 → 열린 폴더에 `EasyOrder.exe` 바로 가기 넣기
